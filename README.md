@@ -2,6 +2,8 @@
 
 한국 피규어 쇼핑몰 22개의 통합 검색 데스크탑 앱 (Windows / macOS / Linux)
 
+<a href="https://github.com/sponsors/maxtortime"><img src="https://img.shields.io/badge/Sponsor-maxtortime-ea4aaa?logo=github-sponsors&logoColor=white" alt="Sponsor maxtortime" /></a>
+
 **Tech Stack:** Tauri v2 · Rust · React · TypeScript
 
 ---
