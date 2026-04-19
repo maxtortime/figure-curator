@@ -94,6 +94,7 @@ export default function App() {
   const [errMsg, setErrMsg] = useState("");
   const [duration, setDuration] = useState(0);
   const [lastKw, setLastKw] = useState("");
+  const [hideSoldOut, setHideSoldOut] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSearch(e?: React.FormEvent) {
@@ -118,6 +119,7 @@ export default function App() {
   }
 
   const loading = uiState === "loading";
+  const visibleResults = hideSoldOut ? results.filter(p => !p.is_sold_out) : results;
 
   return (
     <div className="app">
@@ -189,21 +191,30 @@ export default function App() {
         {uiState === "done" && (
           <>
             <div className="statusbar">
-              <strong>{results.length}</strong>개 결과
+              <strong>{visibleResults.length}</strong>개 결과
+              {hideSoldOut && results.length !== visibleResults.length && (
+                <span className="statusbar__filtered">({results.length - visibleResults.length}개 품절 숨김)</span>
+              )}
               <span className="statusbar__sep" />
               <span className="statusbar__kw">"{lastKw}"</span>
               <span className="statusbar__time">{(duration / 1000).toFixed(1)}s</span>
+              <button
+                className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
+                onClick={() => setHideSoldOut(v => !v)}
+              >
+                품절 제외
+              </button>
             </div>
 
-            {results.length === 0 ? (
+            {visibleResults.length === 0 ? (
               <div className="empty">
                 <span className="empty__glyph">◌</span>
                 <p className="empty__lead">결과 없음</p>
-                <p className="empty__sub">다른 검색어를 시도해보세요</p>
+                <p className="empty__sub">{hideSoldOut ? "품절 제외 시 결과가 없습니다" : "다른 검색어를 시도해보세요"}</p>
               </div>
             ) : (
               <div className="grid">
-                {results.map((p, i) => (
+                {visibleResults.map((p, i) => (
                   <ProductCard
                     key={`${p.shop_id}-${p.source_product_id}-${i}`}
                     product={p}
