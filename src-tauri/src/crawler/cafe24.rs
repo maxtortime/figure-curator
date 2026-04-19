@@ -194,6 +194,7 @@ fn parse_li_items(
 
         let price_text = select_one(el, ".pcDiscountPrice, .sale_price")
             .or_else(|| select_one(el, r#"[id*="product_price_text"]"#))
+            .or_else(|| select_one(el, ".price2"))
             .or_else(|| select_one(el, ".price span"))
             .or_else(|| select_one(el, ".price"))
             .map(|p| get_text(&p))
