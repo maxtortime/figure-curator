@@ -33,4 +33,6 @@ url = "2"
 headless_chrome = "1"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "macros"] }
 anyhow = "1"
+async-trait = "0.1"
+percent-encoding = "2"
 

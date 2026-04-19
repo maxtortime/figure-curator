@@ -1364,8 +1364,10 @@ name = "figure-curator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "encoding_rs",
  "headless_chrome",
+ "percent-encoding",
  "regex",
  "reqwest 0.12.28",
  "rquest",
