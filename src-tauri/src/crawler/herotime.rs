@@ -10,20 +10,31 @@ const SHOP_ID: u32 = 15;
 const SHOP_NAME: &str = "히어로타임";
 const BASE_URL: &str = "https://herotime.co.kr";
 
-// JS: CSS visibility로 품절 감지 (.promotion_soldout 가시성 확인)
+// JS: 여러 품절 셀렉터 + computedStyle로 감지
 const SOLDOUT_JS: &str = r#"
 (function() {
+    const SELS = [
+        '.promotion_soldout',
+        '.icon_soldout',
+        '.btn_soldout',
+        '[class*="soldout"]',
+        '[class*="sold_out"]',
+        '[class*="soldOut"]',
+    ];
+    function isVisible(el) {
+        const s = window.getComputedStyle(el);
+        return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+    }
     const items = document.querySelectorAll('ul.prdList li');
     const sold = [];
     items.forEach(item => {
-        const promo = item.querySelector('.promotion_soldout');
-        if (promo) {
-            const rect = promo.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
+        for (const sel of SELS) {
+            const el = item.querySelector(sel);
+            if (el && isVisible(el)) {
                 const link = item.querySelector('a[href*="product_no"]') || item.querySelector('a[href*="/product/"]');
                 if (link) {
                     const m = link.href.match(/product_no=(\d+)/) || link.href.match(/\/product\/[^/]+\/(\d+)/);
-                    if (m) sold.push(m[1]);
+                    if (m) { sold.push(m[1]); break; }
                 }
             }
         }
