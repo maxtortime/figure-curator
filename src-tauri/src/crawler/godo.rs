@@ -8,7 +8,7 @@ use scraper::Selector;
 
 use super::base::{
     check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
-    normalize_url, parse_html, CrawledProduct, ShopCrawler, HTTP_CLIENT, TIMEOUT_SECS,
+    parse_html, CrawledProduct, ShopCrawler, HTTP_CLIENT, TIMEOUT_SECS,
 };
 
 static GOODS_NO_RE: LazyLock<Regex> =

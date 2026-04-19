@@ -4,7 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use regex::Regex;
-use scraper::{Html, Selector};
+use scraper::Selector;
 
 use super::base::{
     check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
