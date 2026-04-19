@@ -1,0 +1,36 @@
+[package]
+name = "figure-curator"
+version = "0.1.0"
+description = "한국 피규어 쇼핑몰 통합 검색 데스크탑 앱"
+authors = ["maxtortime"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "tauri_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["gzip", "brotli", "cookies", "rustls-tls"], default-features = false }
+rquest = { version = "2", features = ["full"] }
+scraper = "0.23"
+encoding_rs = "0.8"
+regex = "1"
+url = "2"
+headless_chrome = "1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "macros"] }
+anyhow = "1"
+
