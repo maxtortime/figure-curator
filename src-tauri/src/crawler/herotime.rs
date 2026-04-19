@@ -10,7 +10,6 @@ const SHOP_ID: u32 = 15;
 const SHOP_NAME: &str = "히어로타임";
 const BASE_URL: &str = "https://herotime.co.kr";
 
-// JS: 여러 품절 셀렉터 + computedStyle로 감지
 const SOLDOUT_JS: &str = r#"
 (function() {
     const SELS = [
@@ -20,23 +19,31 @@ const SOLDOUT_JS: &str = r#"
         '[class*="soldout"]',
         '[class*="sold_out"]',
         '[class*="soldOut"]',
+        '[class*="SoldOut"]',
+        '[class*="SOLDOUT"]',
     ];
     function isVisible(el) {
         const s = window.getComputedStyle(el);
         return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
     }
+    function isSoldOut(item) {
+        for (const sel of SELS) {
+            // li 자체가 해당 클래스인 경우
+            if (item.matches(sel) && isVisible(item)) return true;
+            // li 내부 자식 확인
+            const el = item.querySelector(sel);
+            if (el && isVisible(el)) return true;
+        }
+        return false;
+    }
     const items = document.querySelectorAll('ul.prdList li');
     const sold = [];
     items.forEach(item => {
-        for (const sel of SELS) {
-            const el = item.querySelector(sel);
-            if (el && isVisible(el)) {
-                const link = item.querySelector('a[href*="product_no"]') || item.querySelector('a[href*="/product/"]');
-                if (link) {
-                    const m = link.href.match(/product_no=(\d+)/) || link.href.match(/\/product\/[^/]+\/(\d+)/);
-                    if (m) { sold.push(m[1]); break; }
-                }
-            }
+        if (!isSoldOut(item)) return;
+        const link = item.querySelector('a[href*="product_no"]') || item.querySelector('a[href*="/product/"]');
+        if (link) {
+            const m = link.href.match(/product_no=(\d+)/) || link.href.match(/\/product\/[^\/]+\/(\d+)/);
+            if (m) sold.push(m[1]);
         }
     });
     return JSON.stringify(sold);
