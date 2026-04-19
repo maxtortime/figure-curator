@@ -116,16 +116,23 @@ impl Cafe24Crawler {
 
 #[async_trait]
 impl ShopCrawler for Cafe24Crawler {
-    fn shop_id(&self) -> u32 {
-        self.shop_id
-    }
-
-    fn shop_name(&self) -> &str {
-        &self.shop_name
-    }
+    fn shop_id(&self) -> u32 { self.shop_id }
+    fn shop_name(&self) -> &str { &self.shop_name }
 
     async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
         let html = self.fetch_search(keyword).await?;
+        Ok(parse_page(&html, &self.base_url, self.shop_id, &self.shop_name))
+    }
+
+    async fn search_page(&self, keyword: &str, page: u32) -> Result<Vec<CrawledProduct>> {
+        // POST 방식은 페이지네이션 미지원
+        if matches!(self.method, FetchMethod::Post) {
+            return if page == 1 { self.search(keyword).await } else { Ok(vec![]) };
+        }
+        let encoded = percent_encoding::utf8_percent_encode(keyword, percent_encoding::NON_ALPHANUMERIC).to_string();
+        let url = format!("{}/product/search.html?keyword={}&page={}", self.base_url, encoded, page);
+        let bytes = HTTP_CLIENT.get(&url).send().await?.bytes().await?;
+        let html = self.decode_bytes(&bytes);
         Ok(parse_page(&html, &self.base_url, self.shop_id, &self.shop_name))
     }
 }

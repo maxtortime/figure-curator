@@ -67,6 +67,11 @@ pub trait ShopCrawler: Send + Sync {
     fn shop_id(&self) -> u32;
     fn shop_name(&self) -> &str;
     async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>>;
+
+    // 페이지네이션 지원. 기본: page 1 = search(), page > 1 = 빈 결과
+    async fn search_page(&self, keyword: &str, page: u32) -> Result<Vec<CrawledProduct>> {
+        if page == 1 { self.search(keyword).await } else { Ok(vec![]) }
+    }
 }
 
 // ── HTML 파싱 ─────────────────────────────────────────────
