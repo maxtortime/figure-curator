@@ -304,6 +304,12 @@ async fn get_grouped_results(keyword: String, app: tauri::AppHandle) -> Option<G
 }
 
 #[tauri::command]
+async fn save_grouped_results(keyword: String, result: GroupResult, app: tauri::AppHandle) -> Result<(), String> {
+    save_grouped_cache(&app, &keyword, &result);
+    Ok(())
+}
+
+#[tauri::command]
 async fn get_jobs(jobs: tauri::State<'_, JobStore>) -> Result<Vec<CrawlJob>, String> {
     let lock = jobs.lock().unwrap();
     let mut list: Vec<CrawlJob> = lock.values().cloned().collect();
@@ -322,6 +328,7 @@ pub fn run() {
             load_history,
             get_cached,
             get_grouped_results,
+            save_grouped_results,
             start_background_crawl,
             get_jobs,
         ])

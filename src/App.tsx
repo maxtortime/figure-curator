@@ -55,12 +55,13 @@ interface JobCompletePayload {
 }
 
 interface GroupKey {
-  type: "Jan" | "ProductNumber" | "Similarity";
-  value: string | number;
+  type: "Jan" | "ProductNumber" | "Similarity" | "Manual";
+  value?: string | number;
 }
 
 interface ProductGroup {
   key: GroupKey;
+  label?: string;
   items: CrawledProduct[];
 }
 
@@ -158,13 +159,22 @@ function HistoryCard({ entry, onSearch }: { entry: HistoryEntry; onSearch: (kw: 
   );
 }
 
-function ProductCard({ product, index }: { product: CrawledProduct; index: number }) {
+function ProductCard({
+  product, index, selectMode, isSelected, onToggle
+}: {
+  product: CrawledProduct;
+  index: number;
+  selectMode?: boolean;
+  isSelected?: boolean;
+  onToggle?: (key: string) => void;
+}) {
   const [imgError, setImgError] = useState(false);
+  const key = productKey(product);
   return (
     <article
-      className={`card${product.is_sold_out ? " card--soldout" : ""}`}
+      className={`card${product.is_sold_out ? " card--soldout" : ""}${selectMode ? " card--selectable" : ""}${isSelected ? " card--selected" : ""}`}
       style={{ animationDelay: `${Math.min(index * 18, 300)}ms` }}
-      onClick={() => openUrl(product.source_url)}
+      onClick={() => selectMode && onToggle ? onToggle(key) : openUrl(product.source_url)}
     >
       <div className="card__img-wrap">
         {!imgError && product.images[0] ? (
@@ -180,6 +190,9 @@ function ProductCard({ product, index }: { product: CrawledProduct; index: numbe
         )}
         {product.is_sold_out && <div className="card__soldout">품절</div>}
         <span className="card__badge">{product.shop_name}</span>
+        {selectMode && (
+          <div className="card__select-check">{isSelected ? "✓" : ""}</div>
+        )}
       </div>
       <div className="card__body">
         <p className="card__name">{product.name}</p>
@@ -191,6 +204,73 @@ function ProductCard({ product, index }: { product: CrawledProduct; index: numbe
         </div>
       </div>
     </article>
+  );
+}
+
+// ── Recent group preview (history screen) ───────────────
+
+function RecentGroupPreview({ keyword, onSearch }: { keyword: string; onSearch: (kw: string) => void }) {
+  const [result, setResult] = useState<GroupResult | null>(null);
+
+  useEffect(() => {
+    invoke<GroupResult | null>("get_grouped_results", { keyword })
+      .then(r => setResult(r))
+      .catch(() => {});
+  }, [keyword]);
+
+  if (!result || result.groups.length === 0) return null;
+
+  const topGroups = result.groups.slice(0, 6);
+
+  return (
+    <div className="history-group-preview">
+      <div className="history-group-preview__header">
+        <span className="history-group-preview__title">최근 그룹화 결과</span>
+        <span className="history-group-preview__kw">"{keyword}"</span>
+        <span className="history-group-preview__meta">
+          {result.groups.length}그룹 · {result.ungrouped.length}개 개별
+        </span>
+        <button
+          className="editor-btn editor-btn--primary"
+          style={{ padding: "3px 10px", fontSize: 11, marginLeft: "auto" }}
+          onClick={() => onSearch(keyword)}
+        >
+          검색 결과 보기
+        </button>
+      </div>
+      <div className="history-group-preview__grid">
+        {topGroups.map((g, i) => {
+          const rep = g.items.find(p => p.images.length > 0) ?? g.items[0];
+          const available = g.items.filter(p => !p.is_sold_out);
+          const minPrice = available.reduce<number | null>((min, p) => {
+            if (p.price === null) return min;
+            return min === null ? p.price : Math.min(min, p.price);
+          }, null);
+          const badge = keyBadge(g.key);
+          return (
+            <div key={i} className="mini-group-card" onClick={() => onSearch(keyword)}>
+              {rep?.images[0]
+                ? <img src={rep.images[0]} className="mini-group-card__img" alt="" />
+                : <div className="mini-group-card__img" />
+              }
+              <div className="mini-group-card__info">
+                <p className="mini-group-card__name">{g.label ?? rep?.name}</p>
+                <p className="mini-group-card__meta">
+                  <span className={`group-card__key-badge ${badge.cls}`} style={{ position: "static", display: "inline", marginRight: 4 }}>{badge.label}</span>
+                  {g.items.length}개 샵
+                  {minPrice !== null && ` · 최저 ${formatPrice(minPrice, rep.shop_id)}`}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {result.groups.length > 6 && (
+        <p className="history-group-preview__more" onClick={() => onSearch(keyword)}>
+          +{result.groups.length - 6}개 그룹 더 있음
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -264,7 +344,239 @@ function GroupCard({ group, index }: { group: ProductGroup; index: number }) {
   );
 }
 
-function GroupedView({ keyword }: { keyword: string }) {
+// ── Group editor ─────────────────────────────────────────
+
+function productKey(p: CrawledProduct) {
+  return `${p.shop_id}-${p.source_product_id}`;
+}
+
+function groupRepName(g: ProductGroup) {
+  if (g.label) return g.label;
+  const rep = g.items.find(p => p.images.length > 0) ?? g.items[0];
+  return rep?.name ?? "그룹";
+}
+
+function EditGroupPage({ keyword, onClose }: { keyword: string; onClose: () => void }) {
+  const [result, setResult] = useState<GroupResult | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [editingLabel, setEditingLabel] = useState<number | null>(null);
+  const [labelDraft, setLabelDraft] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  useEffect(() => {
+    invoke<GroupResult | null>("get_grouped_results", { keyword })
+      .then(r => setResult(r ?? { groups: [], ungrouped: [] }))
+      .catch(() => setResult({ groups: [], ungrouped: [] }));
+  }, [keyword]);
+
+  useEffect(() => {
+    const close = () => setOpenDropdown(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
+
+  if (!result) return <div className="empty"><span className="empty__glyph">◌</span></div>;
+
+  async function save() {
+    if (!result) return;
+    setSaving(true);
+    await invoke("save_grouped_results", { keyword, result }).catch(() => {});
+    setSaving(false);
+    onClose();
+  }
+
+  function removeGroup(gi: number) {
+    setResult(r => {
+      if (!r) return r;
+      const removed = r.groups[gi];
+      return {
+        groups: r.groups.filter((_, i) => i !== gi),
+        ungrouped: [...r.ungrouped, ...removed.items],
+      };
+    });
+  }
+
+  function removeItemFromGroup(gi: number, key: string) {
+    setResult(r => {
+      if (!r) return r;
+      const group = r.groups[gi];
+      const removed = group.items.find(p => productKey(p) === key)!;
+      const newItems = group.items.filter(p => productKey(p) !== key);
+      if (newItems.length === 0) {
+        return { groups: r.groups.filter((_, i) => i !== gi), ungrouped: [...r.ungrouped, removed] };
+      }
+      return {
+        groups: r.groups.map((g, i) => i === gi ? { ...g, items: newItems } : g),
+        ungrouped: [...r.ungrouped, removed],
+      };
+    });
+  }
+
+  function addToGroup(pKey: string, gi: number) {
+    setResult(r => {
+      if (!r) return r;
+      const item = r.ungrouped.find(p => productKey(p) === pKey)!;
+      return {
+        groups: r.groups.map((g, i) => i === gi ? { ...g, items: [...g.items, item] } : g),
+        ungrouped: r.ungrouped.filter(p => productKey(p) !== pKey),
+      };
+    });
+  }
+
+  function createGroupFrom(pKey: string) {
+    setResult(r => {
+      if (!r) return r;
+      const item = r.ungrouped.find(p => productKey(p) === pKey)!;
+      return {
+        groups: [...r.groups, { key: { type: "Manual" }, items: [item] }],
+        ungrouped: r.ungrouped.filter(p => productKey(p) !== pKey),
+      };
+    });
+  }
+
+  function saveLabel(gi: number) {
+    setResult(r => {
+      if (!r) return r;
+      return { ...r, groups: r.groups.map((g, i) => i === gi ? { ...g, label: labelDraft || undefined } : g) };
+    });
+    setEditingLabel(null);
+  }
+
+  return (
+    <div className="editor-page">
+      <div className="editor-header">
+        <h2 className="editor-title">
+          그룹 편집
+          <span>"{keyword}" · {result.groups.length}그룹 / {result.ungrouped.length}개 개별</span>
+        </h2>
+        <button className="editor-btn" onClick={onClose}>취소</button>
+        <button className="editor-btn editor-btn--primary" onClick={save} disabled={saving}>
+          {saving ? "저장 중…" : "저장"}
+        </button>
+      </div>
+
+      {/* Groups */}
+      {result.groups.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <p className="editor-section-title">
+            그룹화된 상품
+            <span className="grouped-section__count">{result.groups.length}</span>
+          </p>
+          {result.groups.map((group, gi) => {
+            const rep = group.items.find(p => p.images.length > 0) ?? group.items[0];
+            const badge = keyBadge(group.key);
+            const isExpanded = expanded === gi;
+            return (
+              <div key={gi} className={`editor-group${isExpanded ? " editor-group--expanded" : ""}`}>
+                <div className="editor-group__header" onClick={() => setExpanded(isExpanded ? null : gi)}>
+                  {rep?.images[0]
+                    ? <img src={rep.images[0]} className="editor-group__img" alt="" />
+                    : <div className="editor-group__img-placeholder">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                  }
+                  <div className="editor-group__meta">
+                    {editingLabel === gi ? (
+                      <input
+                        className="editor-group__name-input"
+                        value={labelDraft}
+                        autoFocus
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => setLabelDraft(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") saveLabel(gi); if (e.key === "Escape") setEditingLabel(null); }}
+                        onBlur={() => saveLabel(gi)}
+                      />
+                    ) : (
+                      <p className="editor-group__name">{groupRepName(group)}</p>
+                    )}
+                    <p className="editor-group__sub">
+                      <span className={`group-card__key-badge ${badge.cls}`} style={{ position: "static", display: "inline", marginRight: 4 }}>{badge.label}</span>
+                      {group.items.length}개 샵
+                    </p>
+                  </div>
+                  <div className="editor-group__actions" onClick={e => e.stopPropagation()}>
+                    <button className="editor-group__action-btn" onClick={() => { setEditingLabel(gi); setLabelDraft(group.label ?? ""); }}>이름</button>
+                    <button className="editor-group__action-btn editor-group__action-btn--danger" onClick={() => removeGroup(gi)}>해제</button>
+                  </div>
+                  <span style={{ color: "var(--t3)", fontSize: 10 }}>{isExpanded ? "▲" : "▼"}</span>
+                </div>
+
+                {isExpanded && (
+                  <div className="editor-group__items">
+                    {group.items.map(item => (
+                      <div key={productKey(item)} className="editor-item">
+                        {item.images[0]
+                          ? <img src={item.images[0]} className="editor-item__img" alt="" />
+                          : <div className="editor-item__img" />
+                        }
+                        <span className="editor-item__name">{item.name}</span>
+                        <span className="editor-item__shop">{item.shop_name}</span>
+                        <button className="editor-item__remove" title="그룹에서 제거" onClick={() => removeItemFromGroup(gi, productKey(item))}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Ungrouped */}
+      {result.ungrouped.length > 0 && (
+        <div className="editor-ungrouped">
+          <p className="editor-section-title">
+            개별 상품
+            <span className="grouped-section__count">{result.ungrouped.length}</span>
+          </p>
+          <div className="editor-ungrouped__list">
+            {result.ungrouped.map(item => {
+              const pKey = productKey(item);
+              const isOpen = openDropdown === pKey;
+              return (
+                <div key={pKey} className="editor-ungrouped__item">
+                  {item.images[0]
+                    ? <img src={item.images[0]} className="editor-item__img" alt="" />
+                    : <div className="editor-item__img" />
+                  }
+                  <span className="editor-item__name">{item.name}</span>
+                  <span className="editor-item__shop">{item.shop_name}</span>
+                  <div className="editor-ungrouped__add" onClick={e => e.stopPropagation()}>
+                    <button
+                      className="editor-ungrouped__add-btn"
+                      onClick={() => setOpenDropdown(isOpen ? null : pKey)}
+                    >
+                      그룹 추가 ▾
+                    </button>
+                    {isOpen && (
+                      <div className="editor-ungrouped__dropdown">
+                        {result.groups.map((g, gi) => (
+                          <button key={gi} className="editor-ungrouped__dropdown-item"
+                            onClick={() => { addToGroup(pKey, gi); setOpenDropdown(null); }}>
+                            {groupRepName(g)}
+                          </button>
+                        ))}
+                        <button className="editor-ungrouped__dropdown-item editor-ungrouped__dropdown-item--new"
+                          onClick={() => { createGroupFrom(pKey); setOpenDropdown(null); }}>
+                          + 새 그룹으로 만들기
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupedView({ keyword, onEdit }: { keyword: string; onEdit?: () => void }) {
   const [result, setResult] = useState<GroupResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [hideSoldOut, setHideSoldOut] = useState(false);
@@ -313,6 +625,11 @@ function GroupedView({ keyword }: { keyword: string }) {
         >
           품절 제외
         </button>
+        {onEdit && (
+          <button className="editor-btn editor-btn--primary" style={{ padding: "3px 10px", fontSize: 11 }} onClick={onEdit}>
+            편집
+          </button>
+        )}
       </div>
 
       {visibleGroups.length > 0 && (
@@ -465,6 +782,9 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [runningJobs, setRunningJobs] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [editingGroupsKw, setEditingGroupsKw] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const toastIdRef = useRef(0);
   const lastKwRef = useRef("");
   const uiStateRef = useRef<UiState>("idle");
@@ -527,6 +847,9 @@ export default function App() {
     if (overrideKw) setKeyword(overrideKw);
     setSelectedShops(new Set());
     setViewMode("list");
+    setSelectMode(false);
+    setSelectedProducts(new Set());
+    setEditingGroupsKw(null);
 
     const cached = await invoke<CachedResult | null>("get_cached", { keyword: kw }).catch(() => null);
 
@@ -546,6 +869,39 @@ export default function App() {
       .catch(() => {});
 
     refreshHistory();
+  }
+
+  function toggleProduct(key: string) {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
+  async function createGroupFromSelection() {
+    if (selectedProducts.size < 2) return;
+    const items = results.filter(p => selectedProducts.has(productKey(p)));
+    const existing = await invoke<GroupResult | null>("get_grouped_results", { keyword: lastKw }).catch(() => null);
+    const selKeys = selectedProducts;
+    const newResult: GroupResult = existing
+      ? {
+          groups: [
+            ...existing.groups
+              .map(g => ({ ...g, items: g.items.filter(p => !selKeys.has(productKey(p))) }))
+              .filter(g => g.items.length > 0),
+            { key: { type: "Manual" as const }, items },
+          ],
+          ungrouped: existing.ungrouped.filter(p => !selKeys.has(productKey(p))),
+        }
+      : {
+          groups: [{ key: { type: "Manual" as const }, items }],
+          ungrouped: results.filter(p => !selKeys.has(productKey(p))),
+        };
+    await invoke("save_grouped_results", { keyword: lastKw, result: newResult }).catch(() => {});
+    setSelectedProducts(new Set());
+    setSelectMode(false);
+    setViewMode("grouped");
   }
 
   function toggleShop(name: string) {
@@ -614,12 +970,17 @@ export default function App() {
       <main className="main">
         {view === "jobs" ? (
           <JobsPage onClose={() => setView("main")} />
+        ) : editingGroupsKw ? (
+          <EditGroupPage keyword={editingGroupsKw} onClose={() => setEditingGroupsKw(null)} />
         ) : (
           <>
             {uiState === "idle" && (
               history.length === 0 ? <Welcome /> : (
                 <div className="history">
                   <p className="history__title">최근 검색</p>
+                  {history.length > 0 && (
+                    <RecentGroupPreview keyword={history[0].keyword} onSearch={kw => handleSearch(undefined, kw)} />
+                  )}
                   <div className="history__list">
                     {history.map(entry => (
                       <HistoryCard
@@ -659,15 +1020,39 @@ export default function App() {
                 </div>
 
                 {viewMode === "grouped" ? (
-                  <GroupedView keyword={lastKw} />
+                  <GroupedView keyword={lastKw} onEdit={() => setEditingGroupsKw(lastKw)} />
                 ) : (
                   <>
+                    {selectMode && (
+                      <div className="select-mode-bar">
+                        <span className="select-mode-bar__count">
+                          {selectedProducts.size > 0 ? `${selectedProducts.size}개 선택됨` : "상품을 선택하세요"}
+                        </span>
+                        <button
+                          className="select-mode-bar__btn select-mode-bar__btn--primary"
+                          disabled={selectedProducts.size < 2}
+                          onClick={createGroupFromSelection}
+                        >
+                          그룹 만들기
+                        </button>
+                        <button className="select-mode-bar__btn" onClick={() => { setSelectMode(false); setSelectedProducts(new Set()); }}>
+                          취소
+                        </button>
+                      </div>
+                    )}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
                       <button
                         className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
                         onClick={() => setHideSoldOut(v => !v)}
                       >
                         품절 제외
+                      </button>
+                      <button
+                        className={`soldout-toggle${selectMode ? " soldout-toggle--on" : ""}`}
+                        onClick={() => { setSelectMode(v => !v); setSelectedProducts(new Set()); }}
+                        style={{ marginLeft: "auto" }}
+                      >
+                        선택 모드
                       </button>
                       {shopList.length > 1 && (
                         <>
@@ -701,7 +1086,14 @@ export default function App() {
                     ) : (
                       <div className="grid">
                         {visibleResults.map((p, i) => (
-                          <ProductCard key={`${p.shop_id}-${p.source_product_id}-${i}`} product={p} index={i} />
+                          <ProductCard
+                            key={`${p.shop_id}-${p.source_product_id}-${i}`}
+                            product={p}
+                            index={i}
+                            selectMode={selectMode}
+                            isSelected={selectedProducts.has(productKey(p))}
+                            onToggle={toggleProduct}
+                          />
                         ))}
                       </div>
                     )}

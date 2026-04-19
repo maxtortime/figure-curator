@@ -117,11 +117,14 @@ pub enum GroupKey {
     Jan(String),
     ProductNumber(String),
     Similarity(f64),
+    Manual,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProductGroup {
     pub key: GroupKey,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
     pub items: Vec<CrawledProduct>,
 }
 
@@ -168,7 +171,7 @@ pub fn auto_group(products: Vec<CrawledProduct>, threshold: f64) -> GroupResult 
         let avail: Vec<usize> = idxs.iter().copied().filter(|&i| !used[i]).collect();
         if avail.len() < 2 { continue; }
         let items = avail.iter().map(|&i| products[i].clone()).collect();
-        groups.push(ProductGroup { key: GroupKey::Jan(jan.clone()), items });
+        groups.push(ProductGroup { key: GroupKey::Jan(jan.clone()), label: None, items });
         for i in avail { used[i] = true; }
     }
 
@@ -186,7 +189,7 @@ pub fn auto_group(products: Vec<CrawledProduct>, threshold: f64) -> GroupResult 
         let shop_ids: HashSet<u32> = avail.iter().map(|&i| products[i].shop_id).collect();
         if shop_ids.len() < 2 { continue; } // 같은 샵끼리만 있으면 스킵
         let items = avail.iter().map(|&i| products[i].clone()).collect();
-        groups.push(ProductGroup { key: GroupKey::ProductNumber(num.clone()), items });
+        groups.push(ProductGroup { key: GroupKey::ProductNumber(num.clone()), label: None, items });
         for i in avail { used[i] = true; }
     }
 
@@ -232,7 +235,7 @@ pub fn auto_group(products: Vec<CrawledProduct>, threshold: f64) -> GroupResult 
                 cosine(&vecs[cluster[0]], &vecs[cluster[1]])
             } else { 0.0 };
             let items = cluster.iter().map(|&li| products[bucket_idxs[li]].clone()).collect();
-            groups.push(ProductGroup { key: GroupKey::Similarity(score), items });
+            groups.push(ProductGroup { key: GroupKey::Similarity(score), label: None, items });
             for li in &cluster { used[bucket_idxs[*li]] = true; }
         }
     }
