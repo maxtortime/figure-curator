@@ -24,7 +24,6 @@ interface HistoryEntry {
   total_count: number;
   available_count: number;
   products: CrawledProduct[];
-  notify: boolean;
 }
 
 interface CachedResult {
@@ -46,16 +45,12 @@ interface CrawlJob {
   status: "running" | "done" | "failed";
   shops: ShopProgress[];
   total_count: number;
-  restock_count: number;
-  restock_items: string[];
 }
 
 interface JobCompletePayload {
   job_id: string;
   keyword: string;
   total: number;
-  restock_count: number;
-  restock_items: string[];
 }
 
 // ── 상수 & 유틸 ──────────────────────────────────────────
@@ -125,13 +120,7 @@ function Welcome() {
   );
 }
 
-function HistoryCard({
-  entry, onSearch, onToggleNotify,
-}: {
-  entry: HistoryEntry;
-  onSearch: (kw: string) => void;
-  onToggleNotify: (kw: string, enabled: boolean) => void;
-}) {
+function HistoryCard({ entry, onSearch }: { entry: HistoryEntry; onSearch: (kw: string) => void }) {
   const previews = entry.products.slice(0, 4);
   return (
     <div className="history-card" onClick={() => onSearch(entry.keyword)}>
@@ -148,27 +137,6 @@ function HistoryCard({
           최근 <strong>'{entry.keyword}'</strong>을(를) 검색하셨네요
         </p>
         <p className="history-card__meta">총 {entry.total_count}개 · 재고 있음 {entry.available_count}개</p>
-      </div>
-      <button
-        className={`notify-toggle${entry.notify ? " notify-toggle--on" : ""}`}
-        title={entry.notify ? "품절 알림 켜짐" : "품절 알림 끄기"}
-        onClick={e => { e.stopPropagation(); onToggleNotify(entry.keyword, !entry.notify); }}
-      >
-        {entry.notify ? "🔔" : "🔕"}
-        <span>{entry.notify ? "알림 ON" : "알림 OFF"}</span>
-      </button>
-    </div>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="card card--skel">
-      <div className="skel skel--img" />
-      <div className="card__body">
-        <div className="skel skel--line" />
-        <div className="skel skel--line skel--short" />
-        <div className="skel skel--price" />
       </div>
     </div>
   );
@@ -255,10 +223,7 @@ function JobsPage({ onClose }: { onClose: () => void }) {
                     {job.status === "running" ? "진행 중" : job.status === "done" ? "완료" : "실패"}
                   </span>
                   {job.status === "done" && (
-                    <span className="job-card__summary">
-                      {job.total_count}개 수집
-                      {job.restock_count > 0 && <span className="job-card__restock"> · 재입고 {job.restock_count}개</span>}
-                    </span>
+                    <span className="job-card__summary">{job.total_count}개 수집</span>
                   )}
                 </div>
                 <div className="job-card__meta">
@@ -289,12 +254,6 @@ function JobsPage({ onClose }: { onClose: () => void }) {
                       )}
                     </div>
                   ))}
-                  {job.restock_items.length > 0 && (
-                    <div className="job-card__restocks">
-                      <p className="job-card__restocks-title">재입고 상품</p>
-                      {job.restock_items.map((name, i) => <p key={i} className="job-card__restock-item">• {name}</p>)}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -316,14 +275,12 @@ interface Toast {
 // ── 메인 앱 ─────────────────────────────────────────────
 
 type View = "main" | "jobs";
-type UiState = "idle" | "loading" | "done" | "error";
+type UiState = "idle" | "done";
 
 export default function App() {
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<CrawledProduct[]>([]);
   const [uiState, setUiState] = useState<UiState>("idle");
-  const [errMsg, setErrMsg] = useState("");
-  const [duration, setDuration] = useState(0);
   const [lastKw, setLastKw] = useState("");
   const [hideSoldOut, setHideSoldOut] = useState(false);
   const [selectedShops, setSelectedShops] = useState<Set<string>>(new Set());
@@ -333,7 +290,8 @@ export default function App() {
   const [runningJobs, setRunningJobs] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const lastKwRef = useRef("");
+  const uiStateRef = useRef<UiState>("idle");
 
   const refreshHistory = useCallback(() => {
     invoke<HistoryEntry[]>("load_history").then(setHistory).catch(() => {});
@@ -341,84 +299,75 @@ export default function App() {
 
   useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
-  // 백그라운드 job 이벤트 수신
+  // 백그라운드 job 완료 이벤트
   useEffect(() => {
-    const unlistenComplete = listen<JobCompletePayload>("job-complete", (event) => {
+    const unlisten = listen<JobCompletePayload>("job-complete", (event) => {
       const p = event.payload;
       setRunningJobs(n => Math.max(0, n - 1));
 
-      if (p.keyword === lastKw) {
-        // 현재 보고 있는 키워드가 완료 → 토스트
-        const id = ++toastIdRef.current;
-        const msg = p.restock_count > 0
-          ? `✓ 결과 업데이트 · 재입고 ${p.restock_count}개`
-          : `✓ 결과 업데이트 (${p.total}개)`;
-        setToasts(ts => [...ts, {
-          id, message: msg,
-          action: {
-            label: "적용",
-            onClick: () => {
-              invoke<CachedResult | null>("get_cached", { keyword: p.keyword })
-                .then(r => { if (r) { setResults(r.products); setCacheAge(r.age_secs); } })
-                .catch(() => {});
-              setToasts(ts => ts.filter(t => t.id !== id));
-            }
+      const id = ++toastIdRef.current;
+      const isCurrentKw = lastKwRef.current === p.keyword;
+      const isViewing = uiStateRef.current === "done";
+
+      const msg = (isViewing && isCurrentKw)
+        ? `✓ "${p.keyword}" 결과 업데이트 (${p.total}개)`
+        : `"${p.keyword}" 검색 완료 (${p.total}개)`;
+      const actionLabel = (isViewing && isCurrentKw) ? "적용" : "보기";
+
+      setToasts(ts => [...ts, {
+        id, message: msg,
+        action: {
+          label: actionLabel,
+          onClick: () => {
+            invoke<CachedResult | null>("get_cached", { keyword: p.keyword })
+              .then(r => {
+                if (!r) return;
+                lastKwRef.current = p.keyword;
+                uiStateRef.current = "done";
+                setLastKw(p.keyword);
+                setKeyword(p.keyword);
+                setResults(r.products);
+                setCacheAge(r.age_secs);
+                setSelectedShops(new Set());
+                setUiState("done");
+              })
+              .catch(() => {});
+            setToasts(ts => ts.filter(t => t.id !== id));
           }
-        }]);
-        setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 8000);
-      }
+        }
+      }]);
+      setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 8000);
       refreshHistory();
     });
 
-    return () => { unlistenComplete.then(fn => fn()); };
-  }, [lastKw, refreshHistory]);
+    return () => { unlisten.then(fn => fn()); };
+  }, [refreshHistory]);
 
   async function handleSearch(e?: React.FormEvent, overrideKw?: string) {
     e?.preventDefault();
     const kw = (overrideKw ?? keyword).trim();
-    if (!kw || uiState === "loading") return;
+    if (!kw) return;
 
     if (overrideKw) setKeyword(overrideKw);
-    setLastKw(kw);
     setSelectedShops(new Set());
-    setCacheAge(null);
 
-    // 캐시 확인
     const cached = await invoke<CachedResult | null>("get_cached", { keyword: kw }).catch(() => null);
 
     if (cached) {
-      // SWR: 캐시 즉시 표시
+      // SWR: 캐시 즉시 표시 + 백그라운드 갱신
+      lastKwRef.current = kw;
+      uiStateRef.current = "done";
+      setLastKw(kw);
       setResults(cached.products);
       setCacheAge(cached.age_secs);
       setUiState("done");
-      setDuration(0);
-
-      // 백그라운드 크롤 시작
-      const notifySetting = history.find(h => h.keyword.toLowerCase() === kw.toLowerCase())?.notify ?? false;
-      invoke<string>("start_background_crawl", { keyword: kw, notify: notifySetting })
-        .then(() => setRunningJobs(n => n + 1))
-        .catch(() => {});
-    } else {
-      // 캐시 없음: 일반 검색
-      setUiState("loading");
-      setErrMsg("");
-      const t0 = Date.now();
-      try {
-        const data = await invoke<CrawledProduct[]>("search", { keyword: kw });
-        setResults(data);
-        setCacheAge(null);
-        setDuration(Date.now() - t0);
-        setUiState("done");
-      } catch (err) {
-        setErrMsg(String(err));
-        setUiState("error");
-      }
     }
-    refreshHistory();
-  }
 
-  async function handleToggleNotify(kw: string, enabled: boolean) {
-    await invoke("toggle_notification", { keyword: kw, enabled }).catch(() => {});
+    // 항상 백그라운드 크롤 시작 (캐시 있든 없든)
+    invoke<string>("start_background_crawl", { keyword: kw })
+      .then(() => setRunningJobs(n => n + 1))
+      .catch(() => {});
+
     refreshHistory();
   }
 
@@ -430,7 +379,6 @@ export default function App() {
     });
   }
 
-  const loading = uiState === "loading";
   const shopList = Array.from(new Map(results.map(p => [p.shop_name, p.shop_id])).entries())
     .sort((a, b) => a[0].localeCompare(b[0], "ko"));
   const visibleResults = results.filter(p => {
@@ -446,7 +394,7 @@ export default function App() {
         <div className="topbar__inner">
           <button
             className="brand"
-            onClick={() => { setUiState("idle"); setKeyword(""); setResults([]); setView("main"); }}
+            onClick={() => { uiStateRef.current = "idle"; setUiState("idle"); setKeyword(""); setResults([]); setView("main"); }}
             title="홈으로"
           >
             <img src="/icon.png" alt="Figure Curator" className="brand__logo" />
@@ -454,23 +402,20 @@ export default function App() {
           </button>
 
           <form className="search-form" onSubmit={handleSearch}>
-            <div className={`search${loading ? " search--busy" : ""}`}>
+            <div className="search">
               <svg className="search__ico" viewBox="0 0 20 20" fill="none">
                 <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M13 13l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <input
-                ref={inputRef}
                 className="search__input"
                 type="text"
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
                 placeholder="넨도로이드, figma, 건담..."
-                disabled={loading}
                 autoFocus
               />
-              {loading && <span className="search__spin" />}
-              <button className="search__btn" type="submit" disabled={loading || !keyword.trim()}>검색</button>
+              <button className="search__btn" type="submit" disabled={!keyword.trim()}>검색</button>
             </div>
           </form>
 
@@ -495,45 +440,20 @@ export default function App() {
         ) : (
           <>
             {uiState === "idle" && (
-              <>
-                {history.length === 0 ? (
-                  <Welcome />
-                ) : (
-                  <div className="history">
-                    <p className="history__title">최근 검색</p>
-                    <div className="history__list">
-                      {history.map(entry => (
-                        <HistoryCard
-                          key={entry.timestamp}
-                          entry={entry}
-                          onSearch={kw => handleSearch(undefined, kw)}
-                          onToggleNotify={handleToggleNotify}
-                        />
-                      ))}
-                    </div>
+              history.length === 0 ? <Welcome /> : (
+                <div className="history">
+                  <p className="history__title">최근 검색</p>
+                  <div className="history__list">
+                    {history.map(entry => (
+                      <HistoryCard
+                        key={entry.timestamp}
+                        entry={entry}
+                        onSearch={kw => handleSearch(undefined, kw)}
+                      />
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-
-            {loading && (
-              <>
-                <div className="statusbar">
-                  <span className="statusbar__dot" />
-                  <span>검색 중…</span>
                 </div>
-                <div className="grid">
-                  {Array.from({ length: 16 }).map((_, i) => <SkeletonCard key={i} />)}
-                </div>
-              </>
-            )}
-
-            {uiState === "error" && (
-              <div className="empty empty--err">
-                <span className="empty__glyph">✕</span>
-                <p className="empty__lead">오류가 발생했습니다</p>
-                <p className="empty__sub">{errMsg}</p>
-              </div>
+              )
             )}
 
             {uiState === "done" && (
@@ -545,10 +465,8 @@ export default function App() {
                   )}
                   <span className="statusbar__sep" />
                   <span className="statusbar__kw">"{lastKw}"</span>
-                  {cacheAge !== null ? (
+                  {cacheAge !== null && (
                     <span className="cache-badge">캐시 · {formatAge(cacheAge)}</span>
-                  ) : (
-                    <span className="statusbar__time">{(duration / 1000).toFixed(1)}s</span>
                   )}
                   <button
                     className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
@@ -604,7 +522,7 @@ export default function App() {
         <div className="toast-stack">
           {toasts.map(t => (
             <div key={t.id} className="toast">
-              <span>{t.message}</span>
+              <span className="toast__msg">{t.message}</span>
               {t.action && (
                 <button className="toast__action" onClick={t.action.onClick}>{t.action.label}</button>
               )}
