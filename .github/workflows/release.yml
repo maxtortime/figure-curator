@@ -112,21 +112,12 @@ jobs:
           echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> $GITHUB_ENV
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
-      - name: Install Windows deps (NASM)
+      - name: Install Windows deps (NASM + LLVM)
         if: matrix.os == 'windows-latest'
-        run: choco install nasm -y
-
-      - name: Set LIBCLANG_PATH (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
         run: |
-          $llvmPath = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "libclang.dll" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -notmatch "ARM64" } |
-            Select-Object -First 1 -ExpandProperty DirectoryName
-          if (-not $llvmPath) {
-            $llvmPath = "C:\Program Files\LLVM\bin"
-          }
-          echo "LIBCLANG_PATH=$llvmPath" >> $env:GITHUB_ENV
+          choco install nasm llvm -y
+          echo "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: Install frontend deps
         run: npm ci
