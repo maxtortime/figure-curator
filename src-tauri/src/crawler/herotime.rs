@@ -10,58 +10,15 @@ const SHOP_ID: u32 = 15;
 const SHOP_NAME: &str = "히어로타임";
 const BASE_URL: &str = "https://herotime.co.kr";
 
+// 품절 상품은 div.promotion_soldout 안에 img가 존재함
 const SOLDOUT_JS: &str = r#"
 (function() {
-    const CLASS_SELS = [
-        '.promotion_soldout',
-        '.icon_soldout',
-        '.btn_soldout',
-        '[class*="soldout"]',
-        '[class*="sold_out"]',
-        '[class*="soldOut"]',
-        '[class*="SoldOut"]',
-        '[class*="SOLDOUT"]',
-    ];
-    const SOLDOUT_TEXTS = ['품절', 'SOLD OUT', 'SOLDOUT', '구매불가', '구매 불가'];
-    function isVisible(el) {
-        const s = window.getComputedStyle(el);
-        return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
-    }
-    function isSoldOut(item) {
-        // 클래스 기반 (li 자체 + 자식)
-        for (const sel of CLASS_SELS) {
-            if (item.matches(sel) && isVisible(item)) return true;
-            const el = item.querySelector(sel);
-            if (el && isVisible(el)) return true;
-        }
-        // CSS pseudo-element content 기반 (::before / ::after 로 "SOLD OUT" 표시하는 경우)
-        const allEls = [item, ...item.querySelectorAll('*')];
-        for (const el of allEls) {
-            for (const pseudo of ['::before', '::after']) {
-                const content = window.getComputedStyle(el, pseudo).content;
-                if (!content || content === 'none' || content === 'normal') continue;
-                const stripped = content.replace(/["']/g, '').trim().toUpperCase();
-                if (SOLDOUT_TEXTS.some(t => stripped.includes(t.toUpperCase()))) return true;
-            }
-        }
-        // textContent 기반
-        for (const el of allEls) {
-            if (!isVisible(el)) continue;
-            const text = (el.textContent || '').trim();
-            if (SOLDOUT_TEXTS.some(t => text === t)) return true;
-        }
-        // img alt/src 기반
-        for (const img of item.querySelectorAll('img')) {
-            const alt = (img.alt || '').toLowerCase();
-            const src = (img.src || '').toLowerCase();
-            if (alt === '품절' || src.includes('soldout') || src.includes('sold_out')) return true;
-        }
-        return false;
-    }
     const items = document.querySelectorAll('ul.prdList li');
     const sold = [];
     items.forEach(item => {
-        if (!isSoldOut(item)) return;
+        const promo = item.querySelector('div.promotion_soldout');
+        if (!promo) return;
+        if (!promo.querySelector('img')) return;
         const link = item.querySelector('a[href*="product_no"]') || item.querySelector('a[href*="/product/"]');
         if (link) {
             const m = link.href.match(/product_no=(\d+)/) || link.href.match(/\/product\/[^\/]+\/(\d+)/);
