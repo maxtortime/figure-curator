@@ -1,4 +1,5 @@
 pub mod crawler;
+pub mod grouper;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -7,6 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use crawler::{get_crawlers, CrawledProduct};
+use grouper::{auto_group, GroupResult, DEFAULT_THRESHOLD};
 
 // ── 유틸 ─────────────────────────────────────────────────
 
@@ -96,6 +98,20 @@ fn save_cache(app: &tauri::AppHandle, keyword: &str, products: &[CrawledProduct]
 
 fn load_cache(app: &tauri::AppHandle, keyword: &str) -> Option<CacheEntry> {
     let path = cache_dir(app).join(format!("{}.json", safe_filename(keyword)));
+    std::fs::read_to_string(&path).ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+}
+
+fn save_grouped_cache(app: &tauri::AppHandle, keyword: &str, result: &GroupResult) {
+    let dir = cache_dir(app);
+    let _ = std::fs::create_dir_all(&dir);
+    if let Ok(json) = serde_json::to_string(result) {
+        let _ = std::fs::write(dir.join(format!("{}_grouped.json", safe_filename(keyword))), json);
+    }
+}
+
+fn load_grouped_cache(app: &tauri::AppHandle, keyword: &str) -> Option<GroupResult> {
+    let path = cache_dir(app).join(format!("{}_grouped.json", safe_filename(keyword)));
     std::fs::read_to_string(&path).ok()
         .and_then(|s| serde_json::from_str(&s).ok())
 }
@@ -213,6 +229,11 @@ async fn do_background_crawl(
 
     let total = all_products.len();
 
+    // 그룹화 및 캐시 저장
+    let group_result = auto_group(all_products.clone(), DEFAULT_THRESHOLD);
+    let group_count = group_result.groups.len();
+    save_grouped_cache(&app, &keyword, &group_result);
+
     if let Ok(mut lock) = jobs.lock() {
         if let Some(job) = lock.get_mut(&job_id) {
             job.status = "done".into();
@@ -224,6 +245,7 @@ async fn do_background_crawl(
         "job_id": &job_id,
         "keyword": &keyword,
         "total": total,
+        "group_count": group_count,
     }));
 }
 
@@ -277,6 +299,11 @@ async fn start_background_crawl(
 }
 
 #[tauri::command]
+async fn get_grouped_results(keyword: String, app: tauri::AppHandle) -> Option<GroupResult> {
+    load_grouped_cache(&app, &keyword)
+}
+
+#[tauri::command]
 async fn get_jobs(jobs: tauri::State<'_, JobStore>) -> Result<Vec<CrawlJob>, String> {
     let lock = jobs.lock().unwrap();
     let mut list: Vec<CrawlJob> = lock.values().cloned().collect();
@@ -294,6 +321,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_history,
             get_cached,
+            get_grouped_results,
             start_background_crawl,
             get_jobs,
         ])
