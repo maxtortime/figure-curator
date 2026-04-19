@@ -211,6 +211,56 @@ body {
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
+/* ── Shop filter ─────────────────────────────────────── */
+.shop-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 14px;
+}
+.shop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--bd);
+  background: var(--s1);
+  color: var(--t2);
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .14s;
+  white-space: nowrap;
+}
+.shop-chip:hover {
+  border-color: var(--accent-bd);
+  color: var(--accent);
+}
+.shop-chip--on {
+  background: var(--accent-bg);
+  border-color: var(--accent-bd);
+  color: var(--accent);
+  font-weight: 600;
+}
+.shop-chip__count {
+  font-family: var(--ffm);
+  font-size: 9.5px;
+  color: inherit;
+  opacity: .7;
+}
+.shop-chip--reset {
+  border-color: transparent;
+  background: none;
+  color: var(--t3);
+  font-size: 10.5px;
+}
+.shop-chip--reset:hover {
+  color: var(--err);
+  border-color: transparent;
+}
+
 /* ── Grid ────────────────────────────────────────────── */
 .grid {
   display: grid;

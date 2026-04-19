@@ -95,6 +95,7 @@ export default function App() {
   const [duration, setDuration] = useState(0);
   const [lastKw, setLastKw] = useState("");
   const [hideSoldOut, setHideSoldOut] = useState(false);
+  const [selectedShops, setSelectedShops] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSearch(e?: React.FormEvent) {
@@ -110,6 +111,7 @@ export default function App() {
     try {
       const data = await invoke<CrawledProduct[]>("search", { keyword: kw });
       setResults(data);
+      setSelectedShops(new Set());
       setDuration(Date.now() - t0);
       setUiState("done");
     } catch (err) {
@@ -119,7 +121,22 @@ export default function App() {
   }
 
   const loading = uiState === "loading";
-  const visibleResults = hideSoldOut ? results.filter(p => !p.is_sold_out) : results;
+  const shopList = Array.from(new Map(results.map(p => [p.shop_name, p.shop_id])).entries())
+    .sort((a, b) => a[0].localeCompare(b[0], "ko"));
+  const visibleResults = results.filter(p => {
+    if (hideSoldOut && p.is_sold_out) return false;
+    if (selectedShops.size > 0 && !selectedShops.has(p.shop_name)) return false;
+    return true;
+  });
+
+  function toggleShop(name: string) {
+    setSelectedShops(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   return (
     <div className="app">
@@ -192,8 +209,8 @@ export default function App() {
           <>
             <div className="statusbar">
               <strong>{visibleResults.length}</strong>개 결과
-              {hideSoldOut && results.length !== visibleResults.length && (
-                <span className="statusbar__filtered">({results.length - visibleResults.length}개 품절 숨김)</span>
+              {(hideSoldOut || selectedShops.size > 0) && visibleResults.length !== results.length && (
+                <span className="statusbar__filtered">({results.length - visibleResults.length}개 숨김)</span>
               )}
               <span className="statusbar__sep" />
               <span className="statusbar__kw">"{lastKw}"</span>
@@ -205,6 +222,27 @@ export default function App() {
                 품절 제외
               </button>
             </div>
+            {shopList.length > 1 && (
+              <div className="shop-filter">
+                {shopList.map(([name]) => (
+                  <button
+                    key={name}
+                    className={`shop-chip${selectedShops.has(name) ? " shop-chip--on" : ""}`}
+                    onClick={() => toggleShop(name)}
+                  >
+                    {name}
+                    <span className="shop-chip__count">
+                      {results.filter(p => p.shop_name === name).length}
+                    </span>
+                  </button>
+                ))}
+                {selectedShops.size > 0 && (
+                  <button className="shop-chip shop-chip--reset" onClick={() => setSelectedShops(new Set())}>
+                    초기화
+                  </button>
+                )}
+              </div>
+            )}
 
             {visibleResults.length === 0 ? (
               <div className="empty">
