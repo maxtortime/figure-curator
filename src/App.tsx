@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import "./App.css";
@@ -13,6 +13,14 @@ interface CrawledProduct {
   source_product_id: string;
   jan_code: string | null;
   images: string[];
+}
+
+interface HistoryEntry {
+  keyword: string;
+  timestamp: number;
+  total_count: number;
+  available_count: number;
+  products: CrawledProduct[];
 }
 
 const JPY_SHOPS = new Set([28, 29]);
@@ -85,6 +93,34 @@ function SkeletonCard() {
   );
 }
 
+function HistoryCard({ entry, onSearch }: { entry: HistoryEntry; onSearch: (kw: string) => void }) {
+  const previews = entry.products.slice(0, 4);
+  return (
+    <div className="history-card" onClick={() => onSearch(entry.keyword)}>
+      <div className="history-card__thumbs">
+        {previews.map((p, i) => (
+          <div key={i} className="history-card__thumb">
+            {p.images[0]
+              ? <img src={p.images[0]} alt={p.name} />
+              : <div className="history-card__thumb-empty" />}
+          </div>
+        ))}
+        {previews.length === 0 && (
+          <div className="history-card__thumb-empty history-card__thumb-empty--wide" />
+        )}
+      </div>
+      <div className="history-card__info">
+        <p className="history-card__label">
+          최근 <strong>'{entry.keyword}'</strong>을(를) 검색하셨네요
+        </p>
+        <p className="history-card__meta">
+          총 {entry.total_count}개 · 재고 있음 {entry.available_count}개
+        </p>
+      </div>
+    </div>
+  );
+}
+
 type State = "idle" | "loading" | "done" | "error";
 
 export default function App() {
@@ -96,13 +132,21 @@ export default function App() {
   const [lastKw, setLastKw] = useState("");
   const [hideSoldOut, setHideSoldOut] = useState(false);
   const [selectedShops, setSelectedShops] = useState<Set<string>>(new Set());
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleSearch(e?: React.FormEvent) {
+  useEffect(() => {
+    invoke<HistoryEntry[]>("load_history")
+      .then(setHistory)
+      .catch(() => {});
+  }, []);
+
+  async function handleSearch(e?: React.FormEvent, overrideKw?: string) {
     e?.preventDefault();
-    const kw = keyword.trim();
+    const kw = (overrideKw ?? keyword).trim();
     if (!kw || uiState === "loading") return;
 
+    if (overrideKw) setKeyword(overrideKw);
     setUiState("loading");
     setErrMsg("");
     setLastKw(kw);
@@ -114,6 +158,8 @@ export default function App() {
       setSelectedShops(new Set());
       setDuration(Date.now() - t0);
       setUiState("done");
+      // 이력 갱신
+      invoke<HistoryEntry[]>("load_history").then(setHistory).catch(() => {});
     } catch (err) {
       setErrMsg(String(err));
       setUiState("error");
@@ -178,11 +224,28 @@ export default function App() {
 
       <main className="main">
         {uiState === "idle" && (
-          <div className="empty">
-            <span className="empty__glyph">◎</span>
-            <p className="empty__lead">22개 쇼핑몰 통합 검색</p>
-            <p className="empty__sub">Cafe24 · MakeShop · 고도몰 · AmiAmi · GoodSmile</p>
-          </div>
+          <>
+            {history.length === 0 ? (
+              <div className="empty">
+                <span className="empty__glyph">◎</span>
+                <p className="empty__lead">22개 쇼핑몰 통합 검색</p>
+                <p className="empty__sub">Cafe24 · MakeShop · 고도몰 · AmiAmi · GoodSmile</p>
+              </div>
+            ) : (
+              <div className="history">
+                <p className="history__title">최근 검색</p>
+                <div className="history__list">
+                  {history.map((entry) => (
+                    <HistoryCard
+                      key={entry.timestamp}
+                      entry={entry}
+                      onSearch={(kw) => handleSearch(undefined, kw)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {loading && (
