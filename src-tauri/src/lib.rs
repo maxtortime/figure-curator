@@ -29,6 +29,15 @@ async fn search(keyword: String) -> Result<Vec<CrawledProduct>, String> {
             all_products.extend(products);
         }
     }
+
+    // price ≤ 1 은 품절 더미 가격 → None 으로 정규화
+    for p in &mut all_products {
+        if p.price.map_or(false, |v| v <= 1) {
+            p.is_sold_out = true;
+            p.price = None;
+        }
+    }
+
     Ok(all_products)
 }
 
