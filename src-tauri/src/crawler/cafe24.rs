@@ -38,6 +38,10 @@ fn extract_pid(href: &str) -> Option<String> {
         .map(|cap| cap[1].to_string())
 }
 
+pub fn extract_pid_pub(href: &str) -> Option<String> {
+    extract_pid(href)
+}
+
 // ── 팩토리 구조체 ─────────────────────────────────────────
 
 pub enum FetchMethod {
