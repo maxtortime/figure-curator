@@ -132,6 +132,7 @@ jobs:
 
   publish-release:
     needs: [create-release, build]
+    if: always() && needs.create-release.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
