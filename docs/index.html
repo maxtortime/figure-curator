@@ -11,34 +11,37 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #080809;
-      --s1:      #0f0f12;
-      --s2:      #16161c;
-      --s3:      #1e1e26;
-      --bd:      #222228;
-      --bd-hi:   #3a3a4a;
+      --bg:      #f4f6fb;
+      --s0:      #ffffff;
+      --s1:      #f8f9fc;
+      --s2:      #eef1f8;
+      --bd:      #dde1ee;
+      --bd-hi:   #b8c0d8;
 
-      --t1: #f0f0f4;
-      --t2: #8a8aa8;
-      --t3: #44445a;
+      --t1: #111827;
+      --t2: #4b5563;
+      --t3: #9ca3af;
 
       --accent:     #2563eb;
-      --accent-dim: rgba(37,99,235,.14);
-      --cta:        #f59e0b;
-      --cta-hi:     #fbbf24;
+      --accent-dim: rgba(37,99,235,.08);
+      --accent-bd:  rgba(37,99,235,.22);
+      --price:      #dc2626;
 
       --r:  8px;
       --r2: 5px;
 
-      --ff:  'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-      --ffd: 'Bebas Neue', 'Impact', sans-serif;
-      --ffm: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+      --ff:  'DM Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      --ffm: 'DM Mono', 'Cascadia Code', Consolas, monospace;
+
+      --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg: 0 20px 50px rgba(37,99,235,.1), 0 8px 16px rgba(0,0,0,.08);
     }
 
     html { scroll-behavior: smooth; }
@@ -53,31 +56,21 @@
       overflow-x: hidden;
     }
 
-    /* dot grid */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,.038) 1px, transparent 1px);
-      background-size: 28px 28px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
     /* ── Nav ── */
     nav {
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
-      background: rgba(8,8,9,.85);
-      backdrop-filter: blur(20px) saturate(1.6);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px) saturate(1.4);
       border-bottom: 1px solid var(--bd);
+      box-shadow: 0 1px 0 rgba(0,0,0,.05);
     }
     .nav-inner {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 28px;
-      height: 56px;
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -89,14 +82,14 @@
       text-decoration: none;
     }
     .nav-logo img {
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       border-radius: 6px;
     }
     .nav-logo-text {
-      font-family: var(--ffd);
-      font-size: 19px;
-      letter-spacing: .07em;
+      font-size: 15px;
+      font-weight: 700;
       color: var(--t1);
+      letter-spacing: -.01em;
     }
     .nav-actions { display: flex; align-items: center; gap: 8px; }
 
@@ -108,7 +101,7 @@
       padding: 7px 16px;
       border-radius: var(--r2);
       font-family: var(--ff);
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: all .14s;
@@ -127,132 +120,130 @@
       border-color: var(--bd-hi);
     }
     .btn-sponsor {
-      background: rgba(234,74,170,.1);
-      color: #ea4aaa;
-      border-color: rgba(234,74,170,.25);
+      background: #fff0f7;
+      color: #db2777;
+      border-color: #fbc8e2;
     }
     .btn-sponsor:hover {
-      background: rgba(234,74,170,.18);
-      border-color: rgba(234,74,170,.5);
+      background: #ffe4f0;
+      border-color: #f9a8d4;
     }
     .btn-primary {
-      background: var(--cta);
-      color: #000;
-      font-weight: 700;
-      border-color: var(--cta);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      border-color: var(--accent);
+      box-shadow: 0 2px 6px rgba(37,99,235,.25);
     }
     .btn-primary:hover {
-      background: var(--cta-hi);
-      border-color: var(--cta-hi);
+      background: #1d4ed8;
+      border-color: #1d4ed8;
       transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(245,158,11,.32);
+      box-shadow: 0 4px 14px rgba(37,99,235,.35);
     }
-    .btn-accent {
+    .btn-outline {
+      background: var(--s0);
+      color: var(--accent);
+      border-color: var(--accent-bd);
+    }
+    .btn-outline:hover {
       background: var(--accent-dim);
-      color: #93b4fd;
-      border-color: rgba(37,99,235,.3);
-    }
-    .btn-accent:hover {
-      background: rgba(37,99,235,.22);
-      border-color: rgba(37,99,235,.55);
+      border-color: var(--accent);
     }
 
     @keyframes fadeup {
-      from { opacity:0; transform: translateY(18px); }
+      from { opacity:0; transform: translateY(16px); }
       to   { opacity:1; transform: translateY(0); }
     }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     /* ── Hero ── */
     .hero {
-      position: relative;
-      z-index: 1;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 110px 28px 64px;
+      padding: 106px 28px 72px;
       display: flex;
       align-items: center;
-      gap: 48px;
+      gap: 56px;
       min-height: 100vh;
     }
-    .hero-content { flex: 1; max-width: 580px; }
+    .hero-content { flex: 1; max-width: 560px; }
 
     .hero-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-family: var(--ffm);
-      font-size: 10.5px;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--accent);
-      letter-spacing: .13em;
-      text-transform: uppercase;
-      margin-bottom: 22px;
-      padding: 5px 14px;
+      letter-spacing: .04em;
+      margin-bottom: 20px;
+      padding: 5px 13px;
       background: var(--accent-dim);
-      border: 1px solid rgba(37,99,235,.26);
+      border: 1px solid var(--accent-bd);
       border-radius: 999px;
-      animation: fadeup .5s ease both;
+      animation: fadeup .45s ease both;
     }
     .hero-eyebrow::before {
       content: '';
-      width: 5px; height: 5px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--accent);
       animation: blink 1.6s ease-in-out infinite;
     }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
     .hero-title {
-      font-family: var(--ffd);
-      font-size: clamp(54px, 8.5vw, 100px);
-      line-height: .93;
-      letter-spacing: .03em;
+      font-size: clamp(36px, 5.5vw, 58px);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -.02em;
       color: var(--t1);
-      margin-bottom: 10px;
-      animation: fadeup .5s .08s ease both;
+      margin-bottom: 16px;
+      animation: fadeup .45s .07s ease both;
     }
     .hero-title em {
       font-style: normal;
-      color: var(--cta);
+      color: var(--accent);
     }
 
     .hero-sub {
-      font-size: 15.5px;
+      font-size: 16px;
       color: var(--t2);
-      font-weight: 300;
+      font-weight: 400;
       line-height: 1.75;
-      margin-bottom: 34px;
-      animation: fadeup .5s .16s ease both;
+      margin-bottom: 32px;
+      animation: fadeup .45s .14s ease both;
     }
 
     .hero-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 48px;
-      animation: fadeup .5s .22s ease both;
+      margin-bottom: 44px;
+      animation: fadeup .45s .2s ease both;
     }
-    .hero-actions .btn { padding: 10px 22px; font-size: 13px; }
-    .hero-actions .btn-primary { padding: 10px 28px; font-size: 13.5px; }
+    .hero-actions .btn { padding: 10px 22px; font-size: 13.5px; }
+    .hero-actions .btn-primary { padding: 10px 28px; }
 
     .hero-stats {
       display: flex;
-      gap: 28px;
+      gap: 32px;
       padding-top: 28px;
       border-top: 1px solid var(--bd);
-      animation: fadeup .5s .3s ease both;
+      animation: fadeup .45s .27s ease both;
     }
-    .stat { display: flex; flex-direction: column; gap: 3px; }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
     .stat-num {
-      font-family: var(--ffd);
-      font-size: 30px;
-      letter-spacing: .04em;
-      line-height: 1;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -.02em;
       color: var(--t1);
     }
+    .stat-num span { color: var(--accent); }
     .stat-label {
       font-family: var(--ffm);
-      font-size: 10px;
-      letter-spacing: .1em;
+      font-size: 10.5px;
+      letter-spacing: .06em;
       text-transform: uppercase;
       color: var(--t3);
     }
@@ -262,22 +253,19 @@
       flex: 1;
       display: flex;
       justify-content: center;
-      animation: fadeup .55s .18s ease both;
+      animation: fadeup .5s .15s ease both;
     }
     .app-frame {
       width: 100%;
-      max-width: 540px;
-      background: var(--s1);
+      max-width: 560px;
+      background: var(--s0);
       border: 1px solid var(--bd);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,.035),
-        0 40px 90px rgba(0,0,0,.65),
-        0 0 100px rgba(37,99,235,.05);
+      box-shadow: var(--shadow-lg);
     }
     .frame-bar {
-      background: var(--s2);
+      background: var(--s1);
       border-bottom: 1px solid var(--bd);
       padding: 10px 14px;
       display: flex;
@@ -308,7 +296,6 @@
       display: block;
       z-index: 1;
     }
-    /* mock UI shown when screenshot.png is missing */
     .mock-ui {
       position: absolute;
       inset: 0;
@@ -318,80 +305,57 @@
       gap: 10px;
     }
     .mock-topbar {
-      height: 34px;
-      background: rgba(255,255,255,.03);
+      height: 32px;
+      background: var(--s0);
       border: 1px solid var(--bd);
       border-radius: 6px;
       display: flex;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 10px;
       gap: 8px;
+      box-shadow: var(--shadow);
     }
-    .mock-search-ico {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      border: 1.5px solid var(--t3);
-      opacity: .5;
-    }
-    .mock-search-bar {
-      flex: 1; height: 8px;
-      background: var(--bd);
-      border-radius: 3px;
-      opacity: .5;
-    }
-    .mock-btn {
-      width: 44px; height: 18px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(37,99,235,.3);
-      border-radius: 3px;
-    }
+    .mock-ico { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--t3); opacity: .4; }
+    .mock-bar { flex: 1; height: 7px; background: var(--bd); border-radius: 3px; }
+    .mock-btn { width: 42px; height: 18px; background: var(--accent); border-radius: 3px; opacity: .7; }
     .mock-grid {
       flex: 1;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
+      gap: 7px;
     }
     .mock-card {
-      background: var(--s1);
+      background: var(--s0);
       border: 1px solid var(--bd);
       border-radius: 5px;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       overflow: hidden;
+      box-shadow: var(--shadow);
     }
-    .mock-card-img {
-      flex: 1;
-      background: var(--s2);
-    }
-    .mock-card-body {
-      height: 20px;
-      background: var(--s1);
-      border-top: 1px solid var(--bd);
-    }
+    .mock-card-img { flex: 1; background: var(--s2); }
+    .mock-card-body { height: 18px; background: var(--s0); border-top: 1px solid var(--bd); }
 
     /* ── Section ── */
     hr.div { border: none; border-top: 1px solid var(--bd); max-width: 1200px; margin: 0 auto; }
     .section {
-      position: relative;
-      z-index: 1;
       max-width: 1200px;
       margin: 0 auto;
       padding: 80px 28px;
     }
     .section-label {
       font-family: var(--ffm);
-      font-size: 10px;
-      letter-spacing: .15em;
+      font-size: 10.5px;
+      letter-spacing: .13em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .section-title {
-      font-family: var(--ffd);
-      font-size: clamp(28px, 4vw, 46px);
-      letter-spacing: .04em;
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 700;
+      letter-spacing: -.02em;
       color: var(--t1);
-      margin-bottom: 40px;
+      margin-bottom: 36px;
     }
 
     /* ── Features ── */
@@ -401,33 +365,34 @@
       gap: 14px;
     }
     .feature-card {
-      background: var(--s1);
+      background: var(--s0);
       border: 1px solid var(--bd);
       border-radius: var(--r);
       padding: 28px 26px;
+      box-shadow: var(--shadow);
       transition: border-color .14s, transform .14s, box-shadow .14s;
     }
     .feature-card:hover {
-      border-color: var(--bd-hi);
+      border-color: var(--accent-bd);
       transform: translateY(-3px);
-      box-shadow: 0 18px 44px rgba(0,0,0,.38);
+      box-shadow: var(--shadow-md);
     }
     .feature-num {
-      font-family: var(--ffd);
-      font-size: 40px;
-      letter-spacing: .04em;
-      color: var(--cta);
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--accent);
       line-height: 1;
       margin-bottom: 10px;
     }
     .feature-title {
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--t1);
       margin-bottom: 8px;
     }
     .feature-desc {
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--t2);
       line-height: 1.75;
     }
@@ -453,28 +418,24 @@
       display: inline-flex;
       align-items: center;
       padding: 7px 16px;
-      background: var(--s2);
+      background: var(--s0);
       border: 1px solid var(--bd);
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--t2);
       white-space: nowrap;
+      box-shadow: var(--shadow);
       transition: all .14s;
       cursor: default;
     }
     .shop-chip:hover {
-      background: var(--s3);
-      color: var(--t1);
-      border-color: var(--bd-hi);
+      border-color: var(--accent-bd);
+      color: var(--accent);
+      background: var(--accent-dim);
     }
 
     /* ── Tech stack ── */
-    .tech-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .tech-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .tech-badge {
       font-family: var(--ffm);
       font-size: 11.5px;
@@ -482,55 +443,82 @@
       border-radius: var(--r2);
       border: 1px solid var(--bd);
       color: var(--t2);
-      background: var(--s2);
+      background: var(--s0);
+      box-shadow: var(--shadow);
       transition: border-color .12s, color .12s;
     }
-    .tech-badge:hover { border-color: var(--bd-hi); color: var(--t1); }
-    .tech-sep { color: var(--t3); font-size: 11px; }
+    .tech-badge:hover { border-color: var(--accent-bd); color: var(--accent); }
+    .tech-sep { color: var(--bd-hi); }
 
     /* ── CTA Banner ── */
     .cta-banner {
-      position: relative;
-      z-index: 1;
       max-width: 1200px;
       margin: 0 auto 80px;
       padding: 0 28px;
     }
     .cta-inner {
-      background: var(--s1);
-      border: 1px solid var(--bd);
+      background: var(--accent);
       border-radius: 14px;
       padding: 52px 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 32px;
-      overflow: hidden;
       position: relative;
+      overflow: hidden;
     }
     .cta-inner::before {
       content: '';
       position: absolute;
-      top: -80px; right: -80px;
-      width: 340px; height: 340px;
-      background: radial-gradient(circle, rgba(37,99,235,.1), transparent 70%);
+      top: -60px; right: -60px;
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,.08);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .cta-inner::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: 40%;
+      width: 240px; height: 240px;
+      background: rgba(255,255,255,.05);
+      border-radius: 50%;
       pointer-events: none;
     }
     .cta-title {
-      font-family: var(--ffd);
-      font-size: clamp(24px, 3vw, 38px);
-      letter-spacing: .04em;
-      color: var(--t1);
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: #fff;
     }
-    .cta-sub { font-size: 13px; color: var(--t2); margin-top: 6px; }
-    .cta-actions { display: flex; gap: 10px; flex-shrink: 0; }
+    .cta-sub { font-size: 13.5px; color: rgba(255,255,255,.75); margin-top: 6px; }
+    .cta-actions { display: flex; gap: 10px; flex-shrink: 0; position: relative; z-index: 1; }
     .cta-actions .btn { padding: 11px 26px; font-size: 13.5px; }
+    .btn-white {
+      background: #fff;
+      color: var(--accent);
+      border-color: #fff;
+      font-weight: 700;
+    }
+    .btn-white:hover {
+      background: #f0f4ff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0,0,0,.15);
+    }
+    .btn-white-outline {
+      background: transparent;
+      color: #fff;
+      border-color: rgba(255,255,255,.5);
+    }
+    .btn-white-outline:hover {
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.8);
+    }
 
     /* ── Footer ── */
     footer {
-      position: relative;
-      z-index: 1;
       border-top: 1px solid var(--bd);
+      background: var(--s0);
     }
     .footer-inner {
       max-width: 1200px;
@@ -550,8 +538,8 @@
       color: var(--t3);
     }
     .footer-link { color: var(--t3); text-decoration: none; transition: color .12s; }
-    .footer-link:hover { color: var(--t2); }
-    .footer-sep { color: var(--bd-hi); }
+    .footer-link:hover { color: var(--accent); }
+    .footer-sep { color: var(--bd); }
     .footer-right {
       font-family: var(--ffm);
       font-size: 10.5px;
@@ -560,17 +548,16 @@
 
     /* ── Responsive ── */
     @media (max-width: 900px) {
-      .hero { flex-direction: column; min-height: auto; padding-top: 100px; gap: 40px; }
+      .hero { flex-direction: column; min-height: auto; padding-top: 96px; gap: 40px; }
       .hero-content { max-width: 100%; }
       .hero-visual { width: 100%; }
       .cta-inner { flex-direction: column; text-align: center; padding: 36px 28px; }
-      .cta-inner::before { display: none; }
       .cta-actions { justify-content: center; flex-wrap: wrap; }
     }
     @media (max-width: 600px) {
       .nav-inner { padding: 0 16px; }
       .section { padding: 56px 16px; }
-      .hero { padding: 90px 16px 48px; }
+      .hero { padding: 88px 16px 48px; }
       .hero-stats { gap: 20px; }
       .features-grid { grid-template-columns: 1fr 1fr; }
       .cta-banner { padding: 0 16px; }
@@ -587,7 +574,7 @@
     <div class="nav-inner">
       <a href="#" class="nav-logo">
         <img src="./icon.png" alt="" onerror="this.style.display='none'">
-        <span class="nav-logo-text">FIGURE CURATOR</span>
+        <span class="nav-logo-text">Figure Curator</span>
       </a>
       <div class="nav-actions">
         <a href="https://github.com/sponsors/maxtortime" target="_blank" rel="noopener" class="btn btn-sponsor">♥ 후원</a>
@@ -600,17 +587,20 @@
   <div class="hero">
     <div class="hero-content">
       <div class="hero-eyebrow">무료 오픈소스 데스크탑 앱</div>
-      <h1 class="hero-title">FIGURE<br><em>CURATOR</em></h1>
+      <h1 class="hero-title">
+        한국 피규어 쇼핑몰<br>
+        <em>22개</em> 통합 검색
+      </h1>
       <p class="hero-sub">
-        한국 피규어 쇼핑몰 22개를<br>
-        단 한 번의 검색으로 — 동시에.
+        넨도로이드, figma, 건담... 원하는 피규어를<br>
+        22개 쇼핑몰에서 단 한 번에 찾아보세요.
       </p>
       <div class="hero-actions">
         <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">↓ 최신 버전 다운로드</a>
-        <a href="https://github.com/maxtortime/figure-curator" target="_blank" rel="noopener" class="btn btn-accent">GitHub에서 보기</a>
+        <a href="https://github.com/maxtortime/figure-curator" target="_blank" rel="noopener" class="btn btn-outline">GitHub에서 보기</a>
       </div>
       <div class="hero-stats">
-        <div class="stat"><span class="stat-num">22</span><span class="stat-label">쇼핑몰</span></div>
+        <div class="stat"><span class="stat-num"><span>22</span></span><span class="stat-label">쇼핑몰</span></div>
         <div class="stat"><span class="stat-num">3</span><span class="stat-label">플랫폼</span></div>
         <div class="stat"><span class="stat-num">무료</span><span class="stat-label">MIT License</span></div>
       </div>
@@ -628,8 +618,8 @@
           <img src="./screenshot.png" alt="Figure Curator 스크린샷" id="screenshot" onerror="this.style.display='none'">
           <div class="mock-ui" id="mock-ui">
             <div class="mock-topbar">
-              <div class="mock-search-ico"></div>
-              <div class="mock-search-bar"></div>
+              <div class="mock-ico"></div>
+              <div class="mock-bar"></div>
               <div class="mock-btn"></div>
             </div>
             <div class="mock-grid">
@@ -718,8 +708,8 @@
         <p class="cta-sub">Windows · macOS · Linux — 무료 다운로드</p>
       </div>
       <div class="cta-actions">
-        <a href="https://github.com/sponsors/maxtortime" target="_blank" rel="noopener" class="btn btn-sponsor">♥ 후원하기</a>
-        <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">↓ 다운로드</a>
+        <a href="https://github.com/sponsors/maxtortime" target="_blank" rel="noopener" class="btn btn-white-outline">♥ 후원하기</a>
+        <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-white">↓ 다운로드</a>
       </div>
     </div>
   </div>
@@ -752,11 +742,11 @@
     const doubled = [...SHOPS, ...SHOPS];
     track.innerHTML = doubled.map(s => `<span class="shop-chip">${s}</span>`).join('');
 
-    // hide mock UI when screenshot loads
     const img = document.getElementById('screenshot');
     const mock = document.getElementById('mock-ui');
     if (img) {
       img.addEventListener('load', () => { if (mock) mock.style.display = 'none'; });
+      if (img.complete && img.naturalWidth > 0 && mock) mock.style.display = 'none';
     }
   </script>
 </body>

@@ -1,30 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Instrument+Serif:ital@1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 /* ── Tokens ──────────────────────────────────────────── */
 :root {
-  --bg:        #09090b;
-  --s0:        #111117;
-  --s1:        #18181f;
-  --s2:        #222230;
-  --bd:        #27272f;
-  --bd-hi:     #3f3f52;
+  --bg:        #f4f6fb;
+  --s0:        #ffffff;
+  --s1:        #f8f9fc;
+  --s2:        #eef1f8;
+  --bd:        #dde1ee;
+  --bd-hi:     #b8c0d8;
 
-  --t1: #f1f1f5;
-  --t2: #8e8ea8;
-  --t3: #4a4a5e;
+  --t1: #111827;
+  --t2: #4b5563;
+  --t3: #9ca3af;
 
   --accent:    #2563eb;
-  --accent-bg: rgba(37,99,235,.12);
-  --accent-bd: rgba(37,99,235,.28);
-  --price:     #ef4444;
-  --err:       #e05555;
+  --accent-bg: rgba(37,99,235,.08);
+  --accent-bd: rgba(37,99,235,.22);
+  --price:     #dc2626;
+  --err:       #dc2626;
 
   --r:  6px;
   --r2: 4px;
 
   --ff:  'DM Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --ffm: 'DM Mono', 'Cascadia Code', Consolas, monospace;
-  --ffd: 'Instrument Serif', Georgia, serif;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,9 +49,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(9,9,11,.88);
-  backdrop-filter: blur(18px) saturate(1.4);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(16px) saturate(1.4);
   border-bottom: 1px solid var(--bd);
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
 }
 .topbar__inner {
   max-width: 1440px;
@@ -70,9 +72,9 @@ body {
 }
 .brand__name {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--t2);
-  letter-spacing: .02em;
+  font-weight: 600;
+  color: var(--t1);
+  letter-spacing: .01em;
   white-space: nowrap;
 }
 
@@ -82,18 +84,19 @@ body {
 .search {
   display: flex;
   align-items: center;
-  background: var(--s1);
+  background: var(--s0);
   border: 1px solid var(--bd);
   border-radius: var(--r);
   padding: 0 4px 0 10px;
   gap: 7px;
   transition: border-color .15s, box-shadow .15s;
+  box-shadow: var(--shadow);
 }
 .search:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
 }
-.search--busy { border-color: rgba(37,99,235,.4); }
+.search--busy { border-color: rgba(37,99,235,.5); }
 
 .search__ico { width: 14px; height: 14px; color: var(--t3); flex-shrink: 0; }
 
@@ -110,7 +113,7 @@ body {
 
 .search__spin {
   width: 13px; height: 13px; flex-shrink: 0;
-  border: 1.5px solid rgba(37,99,235,.25);
+  border: 1.5px solid rgba(37,99,235,.2);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin .65s linear infinite;
@@ -118,21 +121,25 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .search__btn {
-  background: var(--s2);
-  color: var(--t2);
-  border: 1px solid var(--bd);
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
   border-radius: var(--r2);
   font-family: var(--ff);
   font-size: 12px;
-  font-weight: 500;
-  padding: 4px 13px;
+  font-weight: 600;
+  padding: 5px 14px;
   cursor: pointer;
-  transition: background .12s, color .12s;
+  transition: background .12s, box-shadow .12s;
   flex-shrink: 0;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
 }
-.search__btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
-.search__btn:disabled { opacity: .35; cursor: not-allowed; }
+.search__btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37,99,235,.3);
+}
+.search__btn:disabled { opacity: .4; cursor: not-allowed; }
 
 /* ── Main ────────────────────────────────────────────── */
 .main {
@@ -170,17 +177,17 @@ body {
 .statusbar__dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--accent);
   animation: blink 1.1s ease-in-out infinite;
   flex-shrink: 0;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
 /* ── Grid ────────────────────────────────────────────── */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 /* ── Card ────────────────────────────────────────────── */
@@ -192,13 +199,14 @@ body {
   cursor: pointer;
   transition: border-color .14s, transform .14s, box-shadow .14s;
   animation: fadeup .22s ease both;
+  box-shadow: var(--shadow);
 }
 .card:hover {
-  border-color: var(--bd-hi);
+  border-color: var(--accent-bd);
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0,0,0,.45);
+  box-shadow: var(--shadow-md);
 }
-.card--soldout { opacity: .6; }
+.card--soldout { opacity: .55; }
 
 @keyframes fadeup {
   from { opacity:0; transform: translateY(7px); }
@@ -229,9 +237,9 @@ body {
 /* soldout overlay */
 .card__soldout {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,.68);
+  background: rgba(255,255,255,.72);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; color: #fff;
+  font-size: 12px; font-weight: 700; color: var(--t2);
   letter-spacing: .05em;
 }
 
@@ -287,13 +295,13 @@ body {
 }
 
 /* ── Skeleton ────────────────────────────────────────── */
-.card--skel { pointer-events: none; }
+.card--skel { pointer-events: none; box-shadow: none; }
 .skel {
   background: var(--s2);
   border-radius: 3px;
   animation: glimmer 1.4s ease-in-out infinite;
 }
-@keyframes glimmer { 0%,100%{opacity:.45} 50%{opacity:.85} }
+@keyframes glimmer { 0%,100%{opacity:.5} 50%{opacity:.9} }
 .skel--img { aspect-ratio: 1; width: 100%; border-radius: 0; }
 .skel--line { height: 10px; width: 100%; margin-bottom: 5px; }
 .skel--short { width: 60%; }
