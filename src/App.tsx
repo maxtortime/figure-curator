@@ -17,15 +17,6 @@ interface CrawledProduct {
 
 const JPY_SHOPS = new Set([28, 29]);
 
-const SHOP_COLORS: Record<number, string> = {
-  3: "#f5a623", 4: "#4ade80", 8: "#60a5fa", 10: "#f87171",
-  11: "#c084fc", 13: "#34d399", 14: "#fb7185", 15: "#a3e635",
-  16: "#fb923c", 17: "#38bdf8", 18: "#f97316", 19: "#6ee7b7",
-  20: "#d4a843", 21: "#818cf8", 22: "#f9a8d4", 23: "#2dd4bf",
-  24: "#fbbf24", 25: "#a78bfa", 26: "#e2e240", 27: "#4ade80",
-  28: "#f43f5e", 29: "#3b82f6",
-};
-
 function formatPrice(price: number | null, shopId: number): string {
   if (price === null) return "가격 미정";
   return JPY_SHOPS.has(shopId)
@@ -35,7 +26,6 @@ function formatPrice(price: number | null, shopId: number): string {
 
 function ProductCard({ product, index }: { product: CrawledProduct; index: number }) {
   const [imgError, setImgError] = useState(false);
-  const badgeColor = SHOP_COLORS[product.shop_id] ?? "#888";
 
   return (
     <article
@@ -63,10 +53,7 @@ function ProductCard({ product, index }: { product: CrawledProduct; index: numbe
         {product.is_sold_out && (
           <div className="card__soldout">품절</div>
         )}
-        <span
-          className="card__badge"
-          style={{ background: badgeColor }}
-        >
+        <span className="card__badge">
           {product.shop_name}
         </span>
       </div>
@@ -137,7 +124,7 @@ export default function App() {
       <header className="topbar">
         <div className="topbar__inner">
           <div className="brand">
-            <span className="brand__mark">FC</span>
+            <img src="/icon.png" alt="Figure Curator" className="brand__logo" />
             <span className="brand__name">Figure Curator</span>
           </div>
 

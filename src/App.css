@@ -13,9 +13,10 @@
   --t2: #8e8ea8;
   --t3: #4a4a5e;
 
-  --accent:    #e8a535;
-  --accent-bg: rgba(232,165,53,.10);
-  --accent-bd: rgba(232,165,53,.22);
+  --accent:    #2563eb;
+  --accent-bg: rgba(37,99,235,.12);
+  --accent-bd: rgba(37,99,235,.28);
+  --price:     #ef4444;
   --err:       #e05555;
 
   --r:  6px;
@@ -62,16 +63,10 @@ body {
 
 /* ── Brand ───────────────────────────────────────────── */
 .brand { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.brand__mark {
-  font-family: var(--ffd);
-  font-style: italic;
-  font-size: 15px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-bd);
+.brand__logo {
   width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
   border-radius: var(--r2);
+  flex-shrink: 0;
 }
 .brand__name {
   font-size: 13px;
@@ -95,10 +90,10 @@ body {
   transition: border-color .15s, box-shadow .15s;
 }
 .search:focus-within {
-  border-color: var(--bd-hi);
-  box-shadow: 0 0 0 3px rgba(232,165,53,.07);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
 }
-.search--busy { border-color: rgba(232,165,53,.3); }
+.search--busy { border-color: rgba(37,99,235,.4); }
 
 .search__ico { width: 14px; height: 14px; color: var(--t3); flex-shrink: 0; }
 
@@ -115,7 +110,7 @@ body {
 
 .search__spin {
   width: 13px; height: 13px; flex-shrink: 0;
-  border: 1.5px solid var(--bd-hi);
+  border: 1.5px solid rgba(37,99,235,.25);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin .65s linear infinite;
@@ -136,7 +131,7 @@ body {
   flex-shrink: 0;
   letter-spacing: .02em;
 }
-.search__btn:hover:not(:disabled) { background: var(--bd-hi); color: var(--t1); }
+.search__btn:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .search__btn:disabled { opacity: .35; cursor: not-allowed; }
 
 /* ── Main ────────────────────────────────────────────── */
@@ -175,8 +170,9 @@ body {
 .statusbar__dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: #3b82f6;
   animation: blink 1.1s ease-in-out infinite;
+  flex-shrink: 0;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
@@ -243,10 +239,11 @@ body {
 .card__badge {
   position: absolute;
   top: 7px; left: 7px;
-  font-size: 9.5px; font-weight: 600;
-  color: #000;
+  font-size: 9.5px; font-weight: 700;
+  color: #fff;
+  background: var(--accent);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 9999px;
   letter-spacing: .02em;
   white-space: nowrap;
   max-width: calc(100% - 14px);
@@ -276,8 +273,8 @@ body {
 .card__price {
   font-family: var(--ffm);
   font-size: 12.5px;
-  font-weight: 500;
-  color: var(--accent);
+  font-weight: 700;
+  color: var(--price);
   letter-spacing: -.02em;
   white-space: nowrap;
 }
