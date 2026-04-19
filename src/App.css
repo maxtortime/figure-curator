@@ -1008,3 +1008,197 @@ body {
   color: var(--err);
   background: #fef2f2;
 }
+
+/* ── View mode toggle ────────────────────────────────── */
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--bd);
+  border-radius: var(--r2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.view-toggle__btn {
+  background: var(--s1);
+  border: none;
+  color: var(--t3);
+  font-family: var(--ff);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .12s;
+  border-right: 1px solid var(--bd);
+}
+.view-toggle__btn:last-child { border-right: none; }
+.view-toggle__btn:hover { color: var(--t2); background: var(--s2); }
+.view-toggle__btn--active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Grouped section ─────────────────────────────────── */
+.grouped-section { margin-bottom: 28px; }
+.grouped-section__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.grouped-section__count {
+  font-family: var(--ffm);
+  font-size: 10px;
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  padding: 1px 7px;
+  color: var(--t3);
+}
+
+/* ── Group card ──────────────────────────────────────── */
+.group-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--s0);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  animation: fadeup .22s ease both;
+  transition: border-color .14s, box-shadow .14s;
+  cursor: pointer;
+}
+.group-card:hover {
+  border-color: var(--accent-bd);
+  box-shadow: var(--shadow-md);
+}
+
+.group-card__img-wrap {
+  width: 96px;
+  min-height: 96px;
+  flex-shrink: 0;
+  background: var(--s1);
+  overflow: hidden;
+  position: relative;
+}
+.group-card__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.group-card__img-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t3);
+}
+.group-card__img-fallback svg { width: 24px; height: 24px; }
+
+.group-card__key-badge {
+  position: absolute;
+  bottom: 5px; left: 5px;
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: .03em;
+  line-height: 1;
+}
+.group-card__key-badge--jan {
+  background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+}
+.group-card__key-badge--num {
+  background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd);
+}
+.group-card__key-badge--sim {
+  background: var(--s2); color: var(--t3); border: 1px solid var(--bd);
+}
+
+.group-card__body {
+  flex: 1;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.group-card__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--t1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-card__shops {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.group-card__shop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--s2);
+  cursor: pointer;
+  border-radius: var(--r2);
+  transition: background .1s;
+  padding: 3px 6px;
+  margin: 0 -6px;
+}
+.group-card__shop-row:last-child { border-bottom: none; }
+.group-card__shop-row:hover { background: var(--s1); }
+.group-card__shop-row--soldout { opacity: .5; }
+
+.group-card__shop-name {
+  flex: 1;
+  color: var(--t2);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-card__shop-price {
+  font-family: var(--ffm);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--price);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.group-card__shop-price--nil {
+  color: var(--t3);
+  font-size: 10px;
+  font-weight: 400;
+}
+.group-card__shop-soldout {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--t3);
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.group-card__best-price {
+  font-size: 10px;
+  color: var(--t3);
+  font-family: var(--ffm);
+}
+.group-card__best-price strong {
+  color: var(--price);
+  font-size: 11.5px;
+}

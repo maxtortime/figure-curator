@@ -51,6 +51,22 @@ interface JobCompletePayload {
   job_id: string;
   keyword: string;
   total: number;
+  group_count: number;
+}
+
+interface GroupKey {
+  type: "Jan" | "ProductNumber" | "Similarity";
+  value: string | number;
+}
+
+interface ProductGroup {
+  key: GroupKey;
+  items: CrawledProduct[];
+}
+
+interface GroupResult {
+  groups: ProductGroup[];
+  ungrouped: CrawledProduct[];
 }
 
 // ── 상수 & 유틸 ──────────────────────────────────────────
@@ -178,6 +194,164 @@ function ProductCard({ product, index }: { product: CrawledProduct; index: numbe
   );
 }
 
+// ── Group 컴포넌트 ───────────────────────────────────────
+
+function keyBadge(key: GroupKey) {
+  if (key.type === "Jan") return { label: "JAN", cls: "group-card__key-badge--jan" };
+  if (key.type === "ProductNumber") return { label: `No.${key.value}`, cls: "group-card__key-badge--num" };
+  const score = typeof key.value === "number" ? (key.value * 100).toFixed(0) : "?";
+  return { label: `유사도 ${score}%`, cls: "group-card__key-badge--sim" };
+}
+
+function GroupCard({ group, index }: { group: ProductGroup; index: number }) {
+  const rep = group.items.find(p => p.images.length > 0) ?? group.items[0];
+  const [repImgErr, setRepImgErr] = useState(false);
+  const badge = keyBadge(group.key);
+
+  const available = group.items.filter(p => !p.is_sold_out);
+  const minPrice = available.reduce<number | null>((min, p) => {
+    if (p.price === null) return min;
+    return min === null ? p.price : Math.min(min, p.price);
+  }, null);
+
+  return (
+    <div className="group-card" style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}>
+      <div className="group-card__img-wrap">
+        {!repImgErr && rep.images[0] ? (
+          <img src={rep.images[0]} alt={rep.name} className="group-card__img" onError={() => setRepImgErr(true)} />
+        ) : (
+          <div className="group-card__img-fallback">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+        )}
+        <span className={`group-card__key-badge ${badge.cls}`}>{badge.label}</span>
+      </div>
+
+      <div className="group-card__body">
+        <div>
+          <p className="group-card__name">{rep.name}</p>
+          {minPrice !== null && (
+            <p className="group-card__best-price">
+              최저 <strong>{formatPrice(minPrice, rep.shop_id)}</strong>
+              {available.length < group.items.length && ` · ${group.items.length - available.length}개 품절`}
+            </p>
+          )}
+        </div>
+        <div className="group-card__shops">
+          {group.items.map((item, i) => (
+            <div
+              key={i}
+              className={`group-card__shop-row${item.is_sold_out ? " group-card__shop-row--soldout" : ""}`}
+              onClick={e => { e.stopPropagation(); openUrl(item.source_url); }}
+            >
+              <span className="group-card__shop-name">{item.shop_name}</span>
+              {item.is_sold_out ? (
+                <span className="group-card__shop-soldout">품절</span>
+              ) : (
+                <span className={`group-card__shop-price${item.price === null ? " group-card__shop-price--nil" : ""}`}>
+                  {formatPrice(item.price, item.shop_id)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GroupedView({ keyword }: { keyword: string }) {
+  const [result, setResult] = useState<GroupResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hideSoldOut, setHideSoldOut] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    invoke<GroupResult | null>("get_grouped_results", { keyword })
+      .then(r => { setResult(r); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [keyword]);
+
+  if (loading) return (
+    <div className="empty">
+      <span className="search__spin" style={{ width: 20, height: 20, margin: "0 auto" }} />
+    </div>
+  );
+
+  if (!result) return (
+    <div className="empty">
+      <span className="empty__glyph">◌</span>
+      <p className="empty__lead">그룹 데이터 없음</p>
+      <p className="empty__sub">백그라운드 크롤 완료 후 그룹화됩니다</p>
+    </div>
+  );
+
+  const visibleGroups = hideSoldOut
+    ? result.groups.filter(g => g.items.some(p => !p.is_sold_out))
+    : result.groups;
+
+  const visibleUngrouped = hideSoldOut
+    ? result.ungrouped.filter(p => !p.is_sold_out)
+    : result.ungrouped;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <span style={{ fontSize: 11, color: "var(--t3)" }}>
+          <strong style={{ color: "var(--t1)" }}>{result.groups.length}</strong>개 그룹
+          {" · "}
+          <strong style={{ color: "var(--t1)" }}>{result.ungrouped.length}</strong>개 개별
+        </span>
+        <button
+          className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
+          onClick={() => setHideSoldOut(v => !v)}
+          style={{ marginLeft: "auto" }}
+        >
+          품절 제외
+        </button>
+      </div>
+
+      {visibleGroups.length > 0 && (
+        <div className="grouped-section">
+          <p className="grouped-section__title">
+            그룹화된 상품
+            <span className="grouped-section__count">{visibleGroups.length}</span>
+          </p>
+          <div className="group-grid">
+            {visibleGroups.map((g, i) => <GroupCard key={i} group={g} index={i} />)}
+          </div>
+        </div>
+      )}
+
+      {visibleUngrouped.length > 0 && (
+        <div className="grouped-section">
+          <p className="grouped-section__title">
+            개별 상품
+            <span className="grouped-section__count">{visibleUngrouped.length}</span>
+          </p>
+          <div className="grid">
+            {visibleUngrouped.map((p, i) => (
+              <ProductCard key={`${p.shop_id}-${p.source_product_id}`} product={p} index={i} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {visibleGroups.length === 0 && visibleUngrouped.length === 0 && (
+        <div className="empty">
+          <span className="empty__glyph">◌</span>
+          <p className="empty__lead">결과 없음</p>
+          <p className="empty__sub">품절 제외 시 결과가 없습니다</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Jobs 페이지 ──────────────────────────────────────────
 
 function JobsPage({ onClose }: { onClose: () => void }) {
@@ -276,6 +450,7 @@ interface Toast {
 
 type View = "main" | "jobs";
 type UiState = "idle" | "done";
+type ViewMode = "list" | "grouped";
 
 export default function App() {
   const [keyword, setKeyword] = useState("");
@@ -287,6 +462,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [cacheAge, setCacheAge] = useState<number | null>(null);
   const [view, setView] = useState<View>("main");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [runningJobs, setRunningJobs] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(0);
@@ -350,6 +526,7 @@ export default function App() {
 
     if (overrideKw) setKeyword(overrideKw);
     setSelectedShops(new Set());
+    setViewMode("list");
 
     const cached = await invoke<CachedResult | null>("get_cached", { keyword: kw }).catch(() => null);
 
@@ -459,57 +636,76 @@ export default function App() {
             {uiState === "done" && (
               <>
                 <div className="statusbar">
-                  <strong>{visibleResults.length}</strong>개 결과
-                  {(hideSoldOut || selectedShops.size > 0) && visibleResults.length !== results.length && (
-                    <span className="statusbar__filtered">({results.length - visibleResults.length}개 숨김)</span>
-                  )}
+                  <strong>{results.length}</strong>개 결과
                   <span className="statusbar__sep" />
                   <span className="statusbar__kw">"{lastKw}"</span>
                   {cacheAge !== null && (
                     <span className="cache-badge">캐시 · {formatAge(cacheAge)}</span>
                   )}
-                  <button
-                    className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
-                    onClick={() => setHideSoldOut(v => !v)}
-                  >
-                    품절 제외
-                  </button>
+                  <div className="view-toggle" style={{ marginLeft: "auto" }}>
+                    <button
+                      className={`view-toggle__btn${viewMode === "list" ? " view-toggle__btn--active" : ""}`}
+                      onClick={() => setViewMode("list")}
+                    >
+                      목록
+                    </button>
+                    <button
+                      className={`view-toggle__btn${viewMode === "grouped" ? " view-toggle__btn--active" : ""}`}
+                      onClick={() => setViewMode("grouped")}
+                    >
+                      그룹
+                    </button>
+                  </div>
                 </div>
 
-                {shopList.length > 1 && (
-                  <div className="shop-filter">
-                    {shopList.map(([name]) => (
-                      <button
-                        key={name}
-                        className={`shop-chip${selectedShops.has(name) ? " shop-chip--on" : ""}`}
-                        onClick={() => toggleShop(name)}
-                      >
-                        {name}
-                        <span className="shop-chip__count">
-                          {results.filter(p => p.shop_name === name).length}
-                        </span>
-                      </button>
-                    ))}
-                    {selectedShops.size > 0 && (
-                      <button className="shop-chip shop-chip--reset" onClick={() => setSelectedShops(new Set())}>
-                        초기화
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {visibleResults.length === 0 ? (
-                  <div className="empty">
-                    <span className="empty__glyph">◌</span>
-                    <p className="empty__lead">결과 없음</p>
-                    <p className="empty__sub">{hideSoldOut ? "품절 제외 시 결과가 없습니다" : "다른 검색어를 시도해보세요"}</p>
-                  </div>
+                {viewMode === "grouped" ? (
+                  <GroupedView keyword={lastKw} />
                 ) : (
-                  <div className="grid">
-                    {visibleResults.map((p, i) => (
-                      <ProductCard key={`${p.shop_id}-${p.source_product_id}-${i}`} product={p} index={i} />
-                    ))}
-                  </div>
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                      <button
+                        className={`soldout-toggle${hideSoldOut ? " soldout-toggle--on" : ""}`}
+                        onClick={() => setHideSoldOut(v => !v)}
+                      >
+                        품절 제외
+                      </button>
+                      {shopList.length > 1 && (
+                        <>
+                          {shopList.map(([name]) => (
+                            <button
+                              key={name}
+                              className={`shop-chip${selectedShops.has(name) ? " shop-chip--on" : ""}`}
+                              onClick={() => toggleShop(name)}
+                            >
+                              {name}
+                              <span className="shop-chip__count">
+                                {results.filter(p => p.shop_name === name).length}
+                              </span>
+                            </button>
+                          ))}
+                          {selectedShops.size > 0 && (
+                            <button className="shop-chip shop-chip--reset" onClick={() => setSelectedShops(new Set())}>
+                              초기화
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {visibleResults.length === 0 ? (
+                      <div className="empty">
+                        <span className="empty__glyph">◌</span>
+                        <p className="empty__lead">결과 없음</p>
+                        <p className="empty__sub">{hideSoldOut ? "품절 제외 시 결과가 없습니다" : "다른 검색어를 시도해보세요"}</p>
+                      </div>
+                    ) : (
+                      <div className="grid">
+                        {visibleResults.map((p, i) => (
+                          <ProductCard key={`${p.shop_id}-${p.source_product_id}-${i}`} product={p} index={i} />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
