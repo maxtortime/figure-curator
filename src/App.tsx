@@ -93,6 +93,58 @@ function SkeletonCard() {
   );
 }
 
+const SHOPS = [
+  '건담베이스', '건담붐', '코믹스아트', '영웅시대', '피규어앤컬렉션',
+  '아루나샵', '레전드샵', '하비하우스', '하비큐빅', '에이지오브타이탄',
+  '아이코닉토이즈', '라이즈토이즈', '마이리얼히어로', '오른팔왼팔',
+  '원킹덤', '토이스로직', '피규어팝', '굿스마일컴퍼니(공홈)', 'AmiAmi',
+  '히어로타임', '코우마샵', '도키도키굿즈', '이탄스토어', '마니아하우스',
+  '코믹존', '레빗츠컴퍼니',
+];
+
+const FEATURES = [
+  { num: '22', title: '쇼핑몰 동시 검색', desc: 'Cafe24, MakeShop, 고도몰 기반 쇼핑몰과 AmiAmi, 굿스마일 공홈까지 한 번의 검색으로.' },
+  { num: '3', title: '크로스 플랫폼', desc: 'Windows, macOS, Linux. Tauri v2 기반으로 어느 OS에서도 동일하게 동작합니다.' },
+  { num: '30s', title: '병렬 검색', desc: '모든 쇼핑몰을 동시에 병렬 크롤링. 최대 30초 안에 수백 개의 결과를 수집합니다.' },
+  { num: '0원', title: '무료 오픈소스', desc: 'MIT 라이선스로 완전 무료. GitHub에 공개되어 있으며 새 쇼핑몰 기여를 환영합니다.' },
+];
+
+function Welcome() {
+  return (
+    <div className="welcome">
+      <div className="welcome__hero">
+        <span className="welcome__eyebrow">무료 오픈소스 데스크탑 앱</span>
+        <h1 className="welcome__title">한국 피규어 쇼핑몰 <em>22개</em> 통합 검색</h1>
+        <p className="welcome__sub">넨도로이드, figma, 건담… 원하는 피규어를 22개 쇼핑몰에서 단 한 번에 찾아보세요.</p>
+      </div>
+
+      <div className="welcome__features">
+        {FEATURES.map(f => (
+          <div key={f.num} className="welcome__feature">
+            <div className="welcome__feature-num">{f.num}</div>
+            <div className="welcome__feature-title">{f.title}</div>
+            <p className="welcome__feature-desc">{f.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="welcome__marquee-wrap">
+        <div className="welcome__marquee-track">
+          {[...SHOPS, ...SHOPS].map((s, i) => (
+            <span key={i} className="welcome__shop-chip">{s}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="welcome__tech">
+        {['Tauri v2', 'Rust', 'React', 'TypeScript', 'headless_chrome'].map(t => (
+          <span key={t} className="welcome__tech-badge">{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HistoryCard({ entry, onSearch }: { entry: HistoryEntry; onSearch: (kw: string) => void }) {
   const previews = entry.products.slice(0, 4);
   return (
@@ -226,11 +278,7 @@ export default function App() {
         {uiState === "idle" && (
           <>
             {history.length === 0 ? (
-              <div className="empty">
-                <span className="empty__glyph">◎</span>
-                <p className="empty__lead">22개 쇼핑몰 통합 검색</p>
-                <p className="empty__sub">Cafe24 · MakeShop · 고도몰 · AmiAmi · GoodSmile</p>
-              </div>
+              <Welcome />
             ) : (
               <div className="history">
                 <p className="history__title">최근 검색</p>
