@@ -12,7 +12,7 @@ const BASE_URL: &str = "https://herotime.co.kr";
 
 const SOLDOUT_JS: &str = r#"
 (function() {
-    const SELS = [
+    const CLASS_SELS = [
         '.promotion_soldout',
         '.icon_soldout',
         '.btn_soldout',
@@ -22,17 +22,30 @@ const SOLDOUT_JS: &str = r#"
         '[class*="SoldOut"]',
         '[class*="SOLDOUT"]',
     ];
+    const SOLDOUT_TEXTS = ['품절', 'SOLD OUT', 'SOLDOUT', '구매불가', '구매 불가'];
     function isVisible(el) {
         const s = window.getComputedStyle(el);
         return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
     }
     function isSoldOut(item) {
-        for (const sel of SELS) {
-            // li 자체가 해당 클래스인 경우
+        // 클래스 기반 (li 자체 + 자식)
+        for (const sel of CLASS_SELS) {
             if (item.matches(sel) && isVisible(item)) return true;
-            // li 내부 자식 확인
             const el = item.querySelector(sel);
             if (el && isVisible(el)) return true;
+        }
+        // 텍스트 기반: 가시적 텍스트에 품절 키워드 포함
+        const allEls = [item, ...item.querySelectorAll('*')];
+        for (const el of allEls) {
+            if (!isVisible(el)) continue;
+            const text = (el.textContent || '').trim();
+            if (SOLDOUT_TEXTS.some(t => text === t)) return true;
+        }
+        // img alt/src 기반
+        for (const img of item.querySelectorAll('img')) {
+            const alt = (img.alt || '').toLowerCase();
+            const src = (img.src || '').toLowerCase();
+            if (alt === '품절' || src.includes('soldout') || src.includes('sold_out')) return true;
         }
         return false;
     }
