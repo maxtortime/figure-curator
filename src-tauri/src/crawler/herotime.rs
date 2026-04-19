@@ -34,8 +34,17 @@ const SOLDOUT_JS: &str = r#"
             const el = item.querySelector(sel);
             if (el && isVisible(el)) return true;
         }
-        // 텍스트 기반: 가시적 텍스트에 품절 키워드 포함
+        // CSS pseudo-element content 기반 (::before / ::after 로 "SOLD OUT" 표시하는 경우)
         const allEls = [item, ...item.querySelectorAll('*')];
+        for (const el of allEls) {
+            for (const pseudo of ['::before', '::after']) {
+                const content = window.getComputedStyle(el, pseudo).content;
+                if (!content || content === 'none' || content === 'normal') continue;
+                const stripped = content.replace(/["']/g, '').trim().toUpperCase();
+                if (SOLDOUT_TEXTS.some(t => stripped.includes(t.toUpperCase()))) return true;
+            }
+        }
+        // textContent 기반
         for (const el of allEls) {
             if (!isVisible(el)) continue;
             const text = (el.textContent || '').trim();
