@@ -7,7 +7,7 @@ use scraper::Selector;
 
 use super::base::{
     check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
-    normalize_url, parse_html, select_one, CrawledProduct, ShopCrawler, HTTP_CLIENT, TIMEOUT_SECS,
+    normalize_url, parse_html, select_one, CrawledProduct, ShopCrawler, HTTP_CLIENT,
 };
 
 static BRANDUID_RE: LazyLock<Regex> =
@@ -44,7 +44,6 @@ impl MakeshopCrawler {
         let url = format!("{}/shop/shopbrand.html?search={}", self.base_url, encoded);
         let bytes = HTTP_CLIENT
             .get(&url)
-            .timeout(std::time::Duration::from_secs(TIMEOUT_SECS))
             .send()
             .await?
             .bytes()

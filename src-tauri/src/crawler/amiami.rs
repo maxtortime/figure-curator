@@ -2,19 +2,20 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 
+use std::sync::LazyLock;
+
 use super::base::{CrawledProduct, ShopCrawler};
 
 const SHOP_ID: u32 = 29;
 const SHOP_NAME: &str = "아미아미";
 const API_BASE: &str = "https://api.amiami.com/api/v1.0/items";
 
-// rquest 클라이언트 (Cloudflare TLS 핑거프린트 위장)
-fn build_client() -> rquest::Client {
+static CLIENT: LazyLock<rquest::Client> = LazyLock::new(|| {
     rquest::Client::builder()
         .impersonate(rquest::Impersonate::Chrome131)
         .build()
         .unwrap()
-}
+});
 
 #[derive(Deserialize)]
 struct ApiResponse {
@@ -80,8 +81,7 @@ impl ShopCrawler for AmiAmiCrawler {
     fn shop_name(&self) -> &str { SHOP_NAME }
 
     async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
-        let client = build_client();
-        let resp = client
+        let resp = CLIENT
             .get(API_BASE)
             .header("X-User-Key", "amiami_dev")
             .header("Referer", "https://www.amiami.com/")

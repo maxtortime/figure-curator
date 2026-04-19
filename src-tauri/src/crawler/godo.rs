@@ -7,8 +7,7 @@ use regex::Regex;
 use scraper::Selector;
 
 use super::base::{
-    check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
-    parse_html, CrawledProduct, ShopCrawler, HTTP_CLIENT, TIMEOUT_SECS,
+    check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text, parse_html, CrawledProduct, ShopCrawler, HTTP_CLIENT,
 };
 
 static GOODS_NO_RE: LazyLock<Regex> =
@@ -40,7 +39,6 @@ impl ShopCrawler for GodoCrawler {
         let url = format!("{}/goods/goods_search.php?keyword={}", self.base_url, encoded);
         let html = HTTP_CLIENT
             .get(&url)
-            .timeout(std::time::Duration::from_secs(TIMEOUT_SECS))
             .send()
             .await?
             .text()
@@ -96,11 +94,7 @@ fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<Craw
         let image_url = first_product_image(&li, base);
         let is_sold_out = check_sold_out(&text, Some(&li));
 
-        let source_url = if href.starts_with("http") {
-            href.to_string()
-        } else {
-            format!("{}/{}", base, href.trim_start_matches("../"))
-        };
+        let source_url = super::base::normalize_url(href, base);
 
         products.push(CrawledProduct {
             shop_id,
