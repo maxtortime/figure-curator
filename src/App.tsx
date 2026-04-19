@@ -240,10 +240,14 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="topbar__inner">
-          <div className="brand">
+          <button
+            className="brand"
+            onClick={() => { setUiState("idle"); setKeyword(""); setResults([]); }}
+            title="홈으로"
+          >
             <img src="/icon.png" alt="Figure Curator" className="brand__logo" />
             <span className="brand__name">Figure Curator</span>
-          </div>
+          </button>
 
           <form className="search-form" onSubmit={handleSearch}>
             <div className={`search${loading ? " search--busy" : ""}`}>

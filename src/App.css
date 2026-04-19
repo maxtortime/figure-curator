@@ -64,7 +64,13 @@ body {
 }
 
 /* ── Brand ───────────────────────────────────────────── */
-.brand { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.brand {
+  display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+  background: none; border: none; padding: 4px 6px; margin: -4px -6px;
+  border-radius: var(--r2); cursor: pointer;
+  transition: background .13s;
+}
+.brand:hover { background: var(--s2); }
 .brand__logo {
   width: 32px; height: 32px;
   border-radius: var(--r2);
