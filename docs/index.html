@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="한국 피규어 쇼핑몰 22개를 동시에 검색하는 무료 데스크탑 앱. Windows, macOS, Linux 지원.">
+  <meta property="og:title" content="Figure Curator — 한국 피규어 쇼핑몰 22개 통합 검색">
+  <meta property="og:description" content="단 한 번의 검색으로 22개 쇼핑몰을 동시에 — 무료 오픈소스 데스크탑 앱">
+  <meta property="og:image" content="./screenshot.png">
+  <title>Figure Curator — 한국 피규어 쇼핑몰 22개 통합 검색</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #080809;
+      --s1:      #0f0f12;
+      --s2:      #16161c;
+      --s3:      #1e1e26;
+      --bd:      #222228;
+      --bd-hi:   #3a3a4a;
+
+      --t1: #f0f0f4;
+      --t2: #8a8aa8;
+      --t3: #44445a;
+
+      --accent:     #2563eb;
+      --accent-dim: rgba(37,99,235,.14);
+      --cta:        #f59e0b;
+      --cta-hi:     #fbbf24;
+
+      --r:  8px;
+      --r2: 5px;
+
+      --ff:  'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      --ffd: 'Bebas Neue', 'Impact', sans-serif;
+      --ffm: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--t1);
+      font-family: var(--ff);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* dot grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,.038) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(8,8,9,.85);
+      backdrop-filter: blur(20px) saturate(1.6);
+      border-bottom: 1px solid var(--bd);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+    }
+    .nav-logo-text {
+      font-family: var(--ffd);
+      font-size: 19px;
+      letter-spacing: .07em;
+      color: var(--t1);
+    }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: var(--r2);
+      font-family: var(--ff);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .14s;
+      text-decoration: none;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--t2);
+      border-color: var(--bd);
+    }
+    .btn-ghost:hover {
+      background: var(--s2);
+      color: var(--t1);
+      border-color: var(--bd-hi);
+    }
+    .btn-sponsor {
+      background: rgba(234,74,170,.1);
+      color: #ea4aaa;
+      border-color: rgba(234,74,170,.25);
+    }
+    .btn-sponsor:hover {
+      background: rgba(234,74,170,.18);
+      border-color: rgba(234,74,170,.5);
+    }
+    .btn-primary {
+      background: var(--cta);
+      color: #000;
+      font-weight: 700;
+      border-color: var(--cta);
+    }
+    .btn-primary:hover {
+      background: var(--cta-hi);
+      border-color: var(--cta-hi);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(245,158,11,.32);
+    }
+    .btn-accent {
+      background: var(--accent-dim);
+      color: #93b4fd;
+      border-color: rgba(37,99,235,.3);
+    }
+    .btn-accent:hover {
+      background: rgba(37,99,235,.22);
+      border-color: rgba(37,99,235,.55);
+    }
+
+    @keyframes fadeup {
+      from { opacity:0; transform: translateY(18px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 110px 28px 64px;
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      min-height: 100vh;
+    }
+    .hero-content { flex: 1; max-width: 580px; }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--ffm);
+      font-size: 10.5px;
+      color: var(--accent);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+      padding: 5px 14px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(37,99,235,.26);
+      border-radius: 999px;
+      animation: fadeup .5s ease both;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+
+    .hero-title {
+      font-family: var(--ffd);
+      font-size: clamp(54px, 8.5vw, 100px);
+      line-height: .93;
+      letter-spacing: .03em;
+      color: var(--t1);
+      margin-bottom: 10px;
+      animation: fadeup .5s .08s ease both;
+    }
+    .hero-title em {
+      font-style: normal;
+      color: var(--cta);
+    }
+
+    .hero-sub {
+      font-size: 15.5px;
+      color: var(--t2);
+      font-weight: 300;
+      line-height: 1.75;
+      margin-bottom: 34px;
+      animation: fadeup .5s .16s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+      animation: fadeup .5s .22s ease both;
+    }
+    .hero-actions .btn { padding: 10px 22px; font-size: 13px; }
+    .hero-actions .btn-primary { padding: 10px 28px; font-size: 13.5px; }
+
+    .hero-stats {
+      display: flex;
+      gap: 28px;
+      padding-top: 28px;
+      border-top: 1px solid var(--bd);
+      animation: fadeup .5s .3s ease both;
+    }
+    .stat { display: flex; flex-direction: column; gap: 3px; }
+    .stat-num {
+      font-family: var(--ffd);
+      font-size: 30px;
+      letter-spacing: .04em;
+      line-height: 1;
+      color: var(--t1);
+    }
+    .stat-label {
+      font-family: var(--ffm);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+
+    /* ── App frame ── */
+    .hero-visual {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      animation: fadeup .55s .18s ease both;
+    }
+    .app-frame {
+      width: 100%;
+      max-width: 540px;
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.035),
+        0 40px 90px rgba(0,0,0,.65),
+        0 0 100px rgba(37,99,235,.05);
+    }
+    .frame-bar {
+      background: var(--s2);
+      border-bottom: 1px solid var(--bd);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .frame-label {
+      margin-left: 8px;
+      font-family: var(--ffm);
+      font-size: 10px;
+      color: var(--t3);
+    }
+    .frame-body {
+      aspect-ratio: 16/10;
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .frame-body img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* mock UI shown when screenshot.png is missing */
+    .mock-ui {
+      position: absolute;
+      inset: 0;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mock-topbar {
+      height: 34px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+    .mock-search-ico {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid var(--t3);
+      opacity: .5;
+    }
+    .mock-search-bar {
+      flex: 1; height: 8px;
+      background: var(--bd);
+      border-radius: 3px;
+      opacity: .5;
+    }
+    .mock-btn {
+      width: 44px; height: 18px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(37,99,235,.3);
+      border-radius: 3px;
+    }
+    .mock-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .mock-card {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .mock-card-img {
+      flex: 1;
+      background: var(--s2);
+    }
+    .mock-card-body {
+      height: 20px;
+      background: var(--s1);
+      border-top: 1px solid var(--bd);
+    }
+
+    /* ── Section ── */
+    hr.div { border: none; border-top: 1px solid var(--bd); max-width: 1200px; margin: 0 auto; }
+    .section {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 28px;
+    }
+    .section-label {
+      font-family: var(--ffm);
+      font-size: 10px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: var(--ffd);
+      font-size: clamp(28px, 4vw, 46px);
+      letter-spacing: .04em;
+      color: var(--t1);
+      margin-bottom: 40px;
+    }
+
+    /* ── Features ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .feature-card {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: var(--r);
+      padding: 28px 26px;
+      transition: border-color .14s, transform .14s, box-shadow .14s;
+    }
+    .feature-card:hover {
+      border-color: var(--bd-hi);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 44px rgba(0,0,0,.38);
+    }
+    .feature-num {
+      font-family: var(--ffd);
+      font-size: 40px;
+      letter-spacing: .04em;
+      color: var(--cta);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .feature-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      font-size: 12px;
+      color: var(--t2);
+      line-height: 1.75;
+    }
+
+    /* ── Shops marquee ── */
+    .marquee-wrap {
+      overflow: hidden;
+      mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    }
+    .marquee-track {
+      display: flex;
+      gap: 10px;
+      width: max-content;
+      animation: marquee 30s linear infinite;
+    }
+    .marquee-track:hover { animation-play-state: paused; }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .shop-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 16px;
+      background: var(--s2);
+      border: 1px solid var(--bd);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--t2);
+      white-space: nowrap;
+      transition: all .14s;
+      cursor: default;
+    }
+    .shop-chip:hover {
+      background: var(--s3);
+      color: var(--t1);
+      border-color: var(--bd-hi);
+    }
+
+    /* ── Tech stack ── */
+    .tech-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tech-badge {
+      font-family: var(--ffm);
+      font-size: 11.5px;
+      padding: 5px 13px;
+      border-radius: var(--r2);
+      border: 1px solid var(--bd);
+      color: var(--t2);
+      background: var(--s2);
+      transition: border-color .12s, color .12s;
+    }
+    .tech-badge:hover { border-color: var(--bd-hi); color: var(--t1); }
+    .tech-sep { color: var(--t3); font-size: 11px; }
+
+    /* ── CTA Banner ── */
+    .cta-banner {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto 80px;
+      padding: 0 28px;
+    }
+    .cta-inner {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 14px;
+      padding: 52px 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+    .cta-inner::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 340px; height: 340px;
+      background: radial-gradient(circle, rgba(37,99,235,.1), transparent 70%);
+      pointer-events: none;
+    }
+    .cta-title {
+      font-family: var(--ffd);
+      font-size: clamp(24px, 3vw, 38px);
+      letter-spacing: .04em;
+      color: var(--t1);
+    }
+    .cta-sub { font-size: 13px; color: var(--t2); margin-top: 6px; }
+    .cta-actions { display: flex; gap: 10px; flex-shrink: 0; }
+    .cta-actions .btn { padding: 11px 26px; font-size: 13.5px; }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--bd);
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+      color: var(--t3);
+    }
+    .footer-link { color: var(--t3); text-decoration: none; transition: color .12s; }
+    .footer-link:hover { color: var(--t2); }
+    .footer-sep { color: var(--bd-hi); }
+    .footer-right {
+      font-family: var(--ffm);
+      font-size: 10.5px;
+      color: var(--t3);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .hero { flex-direction: column; min-height: auto; padding-top: 100px; gap: 40px; }
+      .hero-content { max-width: 100%; }
+      .hero-visual { width: 100%; }
+      .cta-inner { flex-direction: column; text-align: center; padding: 36px 28px; }
+      .cta-inner::before { display: none; }
+      .cta-actions { justify-content: center; flex-wrap: wrap; }
+    }
+    @media (max-width: 600px) {
+      .nav-inner { padding: 0 16px; }
+      .section { padding: 56px 16px; }
+      .hero { padding: 90px 16px 48px; }
+      .hero-stats { gap: 20px; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .cta-banner { padding: 0 16px; }
+    }
+    @media (max-width: 420px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-actions .btn-sponsor { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <img src="./icon.png" alt="" onerror="this.style.display='none'">
+        <span class="nav-logo-text">FIGURE CURATOR</span>
+      </a>
+      <div class="nav-actions">
+        <a href="https://github.com/sponsors/maxtortime" target="_blank" rel="noopener" class="btn btn-sponsor">♥ 후원</a>
+        <a href="https://github.com/maxtortime/figure-curator" target="_blank" rel="noopener" class="btn btn-ghost">GitHub</a>
+        <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">↓ 다운로드</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">무료 오픈소스 데스크탑 앱</div>
+      <h1 class="hero-title">FIGURE<br><em>CURATOR</em></h1>
+      <p class="hero-sub">
+        한국 피규어 쇼핑몰 22개를<br>
+        단 한 번의 검색으로 — 동시에.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">↓ 최신 버전 다운로드</a>
+        <a href="https://github.com/maxtortime/figure-curator" target="_blank" rel="noopener" class="btn btn-accent">GitHub에서 보기</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">22</span><span class="stat-label">쇼핑몰</span></div>
+        <div class="stat"><span class="stat-num">3</span><span class="stat-label">플랫폼</span></div>
+        <div class="stat"><span class="stat-num">무료</span><span class="stat-label">MIT License</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="app-frame">
+        <div class="frame-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <span class="frame-label">Figure Curator</span>
+        </div>
+        <div class="frame-body">
+          <img src="./screenshot.png" alt="Figure Curator 스크린샷" id="screenshot" onerror="this.style.display='none'">
+          <div class="mock-ui" id="mock-ui">
+            <div class="mock-topbar">
+              <div class="mock-search-ico"></div>
+              <div class="mock-search-bar"></div>
+              <div class="mock-btn"></div>
+            </div>
+            <div class="mock-grid">
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+              <div class="mock-card"><div class="mock-card-img"></div><div class="mock-card-body"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <section class="section">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">왜 Figure Curator?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-num">22</div>
+        <div class="feature-title">쇼핑몰 동시 검색</div>
+        <p class="feature-desc">Cafe24, MakeShop, 고도몰 기반 국내 쇼핑몰과 AmiAmi, 굿스마일 공홈까지 — 한 번의 검색으로 전부.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">3</div>
+        <div class="feature-title">크로스 플랫폼</div>
+        <p class="feature-desc">Windows, macOS (Apple Silicon), Linux. Tauri v2 기반으로 어느 OS에서도 동일하게 동작합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">30s</div>
+        <div class="feature-title">병렬 검색</div>
+        <p class="feature-desc">모든 쇼핑몰을 동시에 병렬 크롤링. 최대 30초 안에 수백 개의 결과를 수집합니다.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">0원</div>
+        <div class="feature-title">무료 오픈소스</div>
+        <p class="feature-desc">MIT 라이선스로 완전 무료. 코드는 GitHub에 공개되어 있으며 새 쇼핑몰 추가 기여를 환영합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="div">
+
+  <section class="section">
+    <p class="section-label">Supported Shops</p>
+    <h2 class="section-title">지원 쇼핑몰</h2>
+    <div class="marquee-wrap">
+      <div class="marquee-track" id="marquee"></div>
+    </div>
+  </section>
+
+  <hr class="div">
+
+  <section class="section" style="padding-bottom: 56px;">
+    <p class="section-label">Built With</p>
+    <h2 class="section-title" style="margin-bottom: 22px;">기술 스택</h2>
+    <div class="tech-row">
+      <span class="tech-badge">Tauri v2</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">Rust</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">React</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">TypeScript</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">rquest</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">scraper</span>
+      <span class="tech-sep">·</span>
+      <span class="tech-badge">headless_chrome</span>
+    </div>
+  </section>
+
+  <div class="cta-banner">
+    <div class="cta-inner">
+      <div>
+        <div class="cta-title">지금 바로 시작하기</div>
+        <p class="cta-sub">Windows · macOS · Linux — 무료 다운로드</p>
+      </div>
+      <div class="cta-actions">
+        <a href="https://github.com/sponsors/maxtortime" target="_blank" rel="noopener" class="btn btn-sponsor">♥ 후원하기</a>
+        <a href="https://github.com/maxtortime/figure-curator/releases/latest" target="_blank" rel="noopener" class="btn btn-primary">↓ 다운로드</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span>© 2026 maxtortime</span>
+        <span class="footer-sep">·</span>
+        <span>MIT License</span>
+        <span class="footer-sep">·</span>
+        <a href="https://github.com/maxtortime/figure-curator" target="_blank" rel="noopener" class="footer-link">GitHub</a>
+        <span class="footer-sep">·</span>
+        <a href="https://github.com/maxtortime/figure-curator/issues" target="_blank" rel="noopener" class="footer-link">이슈 리포트</a>
+        <span class="footer-sep">·</span>
+        <a href="https://www.instagram.com/direct/t/18069695627328262" target="_blank" rel="noopener" class="footer-link">문의 (Instagram DM)</a>
+      </div>
+      <div class="footer-right">Built with Tauri v2 + Rust</div>
+    </div>
+  </footer>
+
+  <script>
+    const SHOPS = [
+      '건담베이스', '건담붐', '코믹스아트', '영웅시대', '피규어앤컬렉션',
+      '아루나샵', '레전드샵', '하비하우스', '하비큐빅', '에이지오브타이탄',
+      '아이코닉토이즈', '라이즈토이즈', '마이리얼히어로', '오른팔왼팔',
+      '원킹덤', '토이스로직', '피규어팝', '굿스마일컴퍼니(공홈)', 'AmiAmi', '영웅시대(herotime)',
+    ];
+    const track = document.getElementById('marquee');
+    const doubled = [...SHOPS, ...SHOPS];
+    track.innerHTML = doubled.map(s => `<span class="shop-chip">${s}</span>`).join('');
+
+    // hide mock UI when screenshot loads
+    const img = document.getElementById('screenshot');
+    const mock = document.getElementById('mock-ui');
+    if (img) {
+      img.addEventListener('load', () => { if (mock) mock.style.display = 'none'; });
+    }
+  </script>
+</body>
+</html>
