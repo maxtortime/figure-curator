@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use std::sync::LazyLock;
 
-use super::base::{CrawledProduct, ShopCrawler};
+use super::base::{FetchedProduct, ShopFetcher};
 
 const SHOP_ID: u32 = 29;
 const SHOP_NAME: &str = "아미아미";
@@ -73,14 +73,14 @@ impl ApiItem {
     }
 }
 
-pub struct AmiAmiCrawler;
+pub struct AmiAmiFetcher;
 
 #[async_trait]
-impl ShopCrawler for AmiAmiCrawler {
+impl ShopFetcher for AmiAmiFetcher {
     fn shop_id(&self) -> u32 { SHOP_ID }
     fn shop_name(&self) -> &str { SHOP_NAME }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let resp = CLIENT
             .get(API_BASE)
             .header("X-User-Key", "amiami_dev")
@@ -108,7 +108,7 @@ impl ShopCrawler for AmiAmiCrawler {
                 let gcode = item.gcode.clone().filter(|s| !s.is_empty())?;
                 let name = item.gname.clone().filter(|s| !s.is_empty())?;
                 let thumb = item.thumb();
-                Some(CrawledProduct {
+                Some(FetchedProduct {
                     shop_id: SHOP_ID,
                     shop_name: SHOP_NAME.to_string(),
                     name,

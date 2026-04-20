@@ -1,11 +1,11 @@
-pub mod crawler;
+pub mod fetcher;
 
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tauri::Manager;
-use crawler::{get_crawlers, CrawledProduct};
+use fetcher::{get_fetchers, FetchedProduct};
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct HistoryEntry {
@@ -13,7 +13,7 @@ pub struct HistoryEntry {
     pub timestamp: u64,
     pub total_count: usize,
     pub available_count: usize,
-    pub products: Vec<CrawledProduct>, // 썸네일용 상위 5개
+    pub products: Vec<FetchedProduct>, // 썸네일용 상위 5개
 }
 
 fn history_path(app: &tauri::AppHandle) -> std::path::PathBuf {
@@ -47,24 +47,24 @@ async fn load_history(app: tauri::AppHandle) -> Vec<HistoryEntry> {
 }
 
 #[tauri::command]
-async fn search(keyword: String, app: tauri::AppHandle) -> Result<Vec<CrawledProduct>, String> {
+async fn search(keyword: String, app: tauri::AppHandle) -> Result<Vec<FetchedProduct>, String> {
     if keyword.trim().is_empty() {
         return Ok(vec![]);
     }
-    let crawlers = get_crawlers();
+    let fetchers = get_fetchers();
     let kw = Arc::new(keyword.clone());
 
-    let handles: Vec<_> = crawlers
+    let handles: Vec<_> = fetchers
         .into_iter()
-        .map(|crawler| {
+        .map(|fetcher| {
             let kw = kw.clone();
             tokio::spawn(async move {
-                tokio::time::timeout(Duration::from_secs(30), crawler.search(&kw)).await
+                tokio::time::timeout(Duration::from_secs(30), fetcher.search(&kw)).await
             })
         })
         .collect();
 
-    let mut all_products: Vec<CrawledProduct> = Vec::new();
+    let mut all_products: Vec<FetchedProduct> = Vec::new();
     for handle in handles {
         if let Ok(Ok(Ok(products))) = handle.await {
             all_products.extend(products);
@@ -86,7 +86,7 @@ async fn search(keyword: String, app: tauri::AppHandle) -> Result<Vec<CrawledPro
         .as_millis() as u64;
 
     let available_count = all_products.iter().filter(|p| !p.is_sold_out).count();
-    let preview: Vec<CrawledProduct> = all_products
+    let preview: Vec<FetchedProduct> = all_products
         .iter()
         .filter(|p| !p.is_sold_out && !p.images.is_empty())
         .take(6)

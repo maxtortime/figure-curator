@@ -7,19 +7,19 @@ use regex::Regex;
 use scraper::Selector;
 
 use super::base::{
-    check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text, parse_html, CrawledProduct, ShopCrawler, HTTP_CLIENT,
+    check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text, parse_html, FetchedProduct, ShopFetcher, HTTP_CLIENT,
 };
 
 static GOODS_NO_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"goodsNo=(\d+)").unwrap());
 
-pub struct GodoCrawler {
+pub struct GodoFetcher {
     pub shop_id: u32,
     pub shop_name: String,
     pub base_url: String,
 }
 
-impl GodoCrawler {
+impl GodoFetcher {
     pub fn new(shop_id: u32, shop_name: &str, domain: &str) -> Self {
         Self {
             shop_id,
@@ -30,11 +30,11 @@ impl GodoCrawler {
 }
 
 #[async_trait]
-impl ShopCrawler for GodoCrawler {
+impl ShopFetcher for GodoFetcher {
     fn shop_id(&self) -> u32 { self.shop_id }
     fn shop_name(&self) -> &str { &self.shop_name }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let encoded = utf8_percent_encode(keyword, NON_ALPHANUMERIC).to_string();
         let url = format!("{}/goods/goods_search.php?keyword={}", self.base_url, encoded);
         let html = HTTP_CLIENT
@@ -47,7 +47,7 @@ impl ShopCrawler for GodoCrawler {
     }
 }
 
-fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> {
+fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<FetchedProduct> {
     let doc = parse_html(html);
     let mut products = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -96,7 +96,7 @@ fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<Craw
 
         let source_url = super::base::normalize_url(href, base);
 
-        products.push(CrawledProduct {
+        products.push(FetchedProduct {
             shop_id,
             shop_name: shop_name.to_string(),
             name,

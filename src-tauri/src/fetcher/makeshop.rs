@@ -7,7 +7,7 @@ use scraper::Selector;
 
 use super::base::{
     check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
-    normalize_url, parse_html, select_one, CrawledProduct, ShopCrawler, HTTP_CLIENT,
+    normalize_url, parse_html, select_one, FetchedProduct, ShopFetcher, HTTP_CLIENT,
 };
 
 static BRANDUID_RE: LazyLock<Regex> =
@@ -16,14 +16,14 @@ static BRANDUID_RE: LazyLock<Regex> =
 static PRICE_ONLY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[\d,]+원?$").unwrap());
 
-pub struct MakeshopCrawler {
+pub struct MakeshopFetcher {
     pub shop_id: u32,
     pub shop_name: String,
     pub base_url: String,
     pub encoding: &'static encoding_rs::Encoding,
 }
 
-impl MakeshopCrawler {
+impl MakeshopFetcher {
     pub fn new(shop_id: u32, shop_name: &str, domain: &str) -> Self {
         Self {
             shop_id,
@@ -53,17 +53,17 @@ impl MakeshopCrawler {
 }
 
 #[async_trait]
-impl ShopCrawler for MakeshopCrawler {
+impl ShopFetcher for MakeshopFetcher {
     fn shop_id(&self) -> u32 { self.shop_id }
     fn shop_name(&self) -> &str { &self.shop_name }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let html = self.fetch_search(keyword).await?;
         Ok(parse_page(&html, &self.base_url, self.shop_id, &self.shop_name))
     }
 }
 
-pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> {
+pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<FetchedProduct> {
     let doc = parse_html(html);
     let mut seen = std::collections::HashSet::new();
 
@@ -102,7 +102,7 @@ pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<
             let image_url = first_product_image(li, base);
             let is_sold_out = check_sold_out(&text, Some(li));
 
-            products.push(CrawledProduct {
+            products.push(FetchedProduct {
                 shop_id,
                 shop_name: shop_name.to_string(),
                 name,
@@ -148,7 +148,7 @@ pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<
         let image_url = normalize_url(img_src, base);
         let is_sold_out = check_sold_out(&text, Some(&link));
 
-        products.push(CrawledProduct {
+        products.push(FetchedProduct {
             shop_id,
             shop_name: shop_name.to_string(),
             name,

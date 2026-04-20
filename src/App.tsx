@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import "./App.css";
 
-interface CrawledProduct {
+interface FetchedProduct {
   shop_id: number;
   shop_name: string;
   name: string;
@@ -20,7 +20,7 @@ interface HistoryEntry {
   timestamp: number;
   total_count: number;
   available_count: number;
-  products: CrawledProduct[];
+  products: FetchedProduct[];
 }
 
 const JPY_SHOPS = new Set([28, 29]);
@@ -32,7 +32,7 @@ function formatPrice(price: number | null, shopId: number): string {
     : `₩${price.toLocaleString()}`;
 }
 
-function ProductCard({ product, index }: { product: CrawledProduct; index: number }) {
+function ProductCard({ product, index }: { product: FetchedProduct; index: number }) {
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -177,7 +177,7 @@ type State = "idle" | "loading" | "done" | "error";
 
 export default function App() {
   const [keyword, setKeyword] = useState("");
-  const [results, setResults] = useState<CrawledProduct[]>([]);
+  const [results, setResults] = useState<FetchedProduct[]>([]);
   const [uiState, setUiState] = useState<State>("idle");
   const [errMsg, setErrMsg] = useState("");
   const [duration, setDuration] = useState(0);
@@ -205,7 +205,7 @@ export default function App() {
     const t0 = Date.now();
 
     try {
-      const data = await invoke<CrawledProduct[]>("search", { keyword: kw });
+      const data = await invoke<FetchedProduct[]>("search", { keyword: kw });
       setResults(data);
       setSelectedShops(new Set());
       setDuration(Date.now() - t0);

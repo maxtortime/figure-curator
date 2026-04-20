@@ -48,7 +48,7 @@ pub static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
 // ── 크롤링 결과 타입 ──────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CrawledProduct {
+pub struct FetchedProduct {
     pub shop_id: u32,
     pub shop_name: String,
     pub name: String,
@@ -60,13 +60,13 @@ pub struct CrawledProduct {
     pub images: Vec<String>,
 }
 
-// ── ShopCrawler 트레이트 ──────────────────────────────────
+// ── ShopFetcher 트레이트 ──────────────────────────────────
 
 #[async_trait]
-pub trait ShopCrawler: Send + Sync {
+pub trait ShopFetcher: Send + Sync {
     fn shop_id(&self) -> u32;
     fn shop_name(&self) -> &str;
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>>;
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>>;
 }
 
 // ── HTML 파싱 ─────────────────────────────────────────────

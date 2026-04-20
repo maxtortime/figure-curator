@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use scraper::Selector;
 
-use super::base::{parse_html, CrawledProduct, ShopCrawler};
+use super::base::{parse_html, FetchedProduct, ShopFetcher};
 use super::cafe24::parse_page;
 
 const SHOP_ID: u32 = 15;
@@ -47,14 +47,14 @@ fn extract_soldout_ids(html: &str) -> std::collections::HashSet<String> {
     ids
 }
 
-pub struct HerotimeCrawler;
+pub struct HerotimeFetcher;
 
 #[async_trait]
-impl ShopCrawler for HerotimeCrawler {
+impl ShopFetcher for HerotimeFetcher {
     fn shop_id(&self) -> u32 { SHOP_ID }
     fn shop_name(&self) -> &str { SHOP_NAME }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let encoded = utf8_percent_encode(keyword, NON_ALPHANUMERIC).to_string();
         let url = format!("{BASE_URL}/product/search.html?keyword={encoded}");
 

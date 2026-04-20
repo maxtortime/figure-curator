@@ -5,7 +5,7 @@ use regex::Regex;
 use scraper::Selector;
 use std::sync::LazyLock;
 
-use super::base::{normalize_url, parse_html, get_text, CrawledProduct, ShopCrawler};
+use super::base::{normalize_url, parse_html, get_text, FetchedProduct, ShopFetcher};
 
 const SHOP_ID: u32 = 28;
 const SHOP_NAME: &str = "굿스마일";
@@ -30,7 +30,7 @@ fn fetch_html_via_browser(url: &str) -> Result<String> {
     Ok(tab.get_content()?)
 }
 
-fn parse_page(html: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> {
+fn parse_page(html: &str, shop_id: u32, shop_name: &str) -> Vec<FetchedProduct> {
     let doc = parse_html(html);
     let mut products = Vec::new();
 
@@ -88,7 +88,7 @@ fn parse_page(html: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> 
 
         let is_sold_out = get_text(&el).to_lowercase().contains("sold out");
 
-        products.push(CrawledProduct {
+        products.push(FetchedProduct {
             shop_id,
             shop_name: shop_name.to_string(),
             name,
@@ -103,14 +103,14 @@ fn parse_page(html: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> 
     products
 }
 
-pub struct GoodsmileCrawler;
+pub struct GoodsmileFetcher;
 
 #[async_trait]
-impl ShopCrawler for GoodsmileCrawler {
+impl ShopFetcher for GoodsmileFetcher {
     fn shop_id(&self) -> u32 { SHOP_ID }
     fn shop_name(&self) -> &str { SHOP_NAME }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let encoded = utf8_percent_encode(keyword, NON_ALPHANUMERIC).to_string();
         let url = format!("{BASE_URL}/en/search?search_keyword={encoded}");
         let html = tokio::task::spawn_blocking(move || fetch_html_via_browser(&url)).await??;

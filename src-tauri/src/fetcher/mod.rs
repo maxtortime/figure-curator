@@ -7,5 +7,5 @@ pub mod herotime;
 pub mod makeshop;
 pub mod registry;
 
-pub use base::CrawledProduct;
-pub use registry::get_crawlers;
+pub use base::FetchedProduct;
+pub use registry::get_fetchers;

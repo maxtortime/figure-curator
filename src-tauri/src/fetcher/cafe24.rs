@@ -8,7 +8,7 @@ use scraper::Selector;
 
 use super::base::{
     check_sold_out, ensure_http_protocol, extract_price_krw, first_product_image, get_text,
-    normalize_url, parse_html, select_one, CrawledProduct, ShopCrawler, HTTP_CLIENT,
+    normalize_url, parse_html, select_one, FetchedProduct, ShopFetcher, HTTP_CLIENT,
 };
 
 static NAME_LABEL_RE: LazyLock<Regex> =
@@ -49,7 +49,7 @@ pub enum FetchMethod {
     Post,
 }
 
-pub struct Cafe24Crawler {
+pub struct Cafe24Fetcher {
     pub shop_id: u32,
     pub shop_name: String,
     pub base_url: String,
@@ -57,7 +57,7 @@ pub struct Cafe24Crawler {
     pub encoding: Option<&'static encoding_rs::Encoding>,
 }
 
-impl Cafe24Crawler {
+impl Cafe24Fetcher {
     pub fn new(shop_id: u32, shop_name: &str, domain: &str) -> Self {
         Self {
             shop_id,
@@ -115,7 +115,7 @@ impl Cafe24Crawler {
 }
 
 #[async_trait]
-impl ShopCrawler for Cafe24Crawler {
+impl ShopFetcher for Cafe24Fetcher {
     fn shop_id(&self) -> u32 {
         self.shop_id
     }
@@ -124,7 +124,7 @@ impl ShopCrawler for Cafe24Crawler {
         &self.shop_name
     }
 
-    async fn search(&self, keyword: &str) -> Result<Vec<CrawledProduct>> {
+    async fn search(&self, keyword: &str) -> Result<Vec<FetchedProduct>> {
         let html = self.fetch_search(keyword).await?;
         Ok(parse_page(&html, &self.base_url, self.shop_id, &self.shop_name))
     }
@@ -132,7 +132,7 @@ impl ShopCrawler for Cafe24Crawler {
 
 // ── HTML 파싱 ─────────────────────────────────────────────
 
-pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<CrawledProduct> {
+pub fn parse_page(html: &str, base: &str, shop_id: u32, shop_name: &str) -> Vec<FetchedProduct> {
     let doc = parse_html(html);
 
     let dl_sel = Selector::parse("dl.rightPad").unwrap();
@@ -166,7 +166,7 @@ fn parse_li_items(
     base: &str,
     shop_id: u32,
     shop_name: &str,
-) -> Vec<CrawledProduct> {
+) -> Vec<FetchedProduct> {
     let mut products = Vec::new();
     let mut seen = std::collections::HashSet::new();
 
@@ -217,7 +217,7 @@ fn parse_li_items(
             sold
         };
 
-        products.push(CrawledProduct {
+        products.push(FetchedProduct {
             shop_id,
             shop_name: shop_name.to_string(),
             name,
@@ -237,7 +237,7 @@ fn parse_dl_items(
     base: &str,
     shop_id: u32,
     shop_name: &str,
-) -> Vec<CrawledProduct> {
+) -> Vec<FetchedProduct> {
     let mut products = Vec::new();
     let mut seen = std::collections::HashSet::new();
 
@@ -290,7 +290,7 @@ fn parse_dl_items(
             is_sold_out = check_sold_out(&text, None);
         }
 
-        products.push(CrawledProduct {
+        products.push(FetchedProduct {
             shop_id,
             shop_name: shop_name.to_string(),
             name,
