@@ -36,7 +36,3 @@ export const FONT_MONO = "'DM Mono', 'Cascadia Code', Consolas, monospace";
 export const W = 1080;
 export const H = 1920;
 export const FPS = 30;
-
-// AppWindow is 1000px native → scale to fill 1080px canvas width exactly
-export const APP_SCALE = W / 1000; // 1.08
-export const APP_TOP   = 150;      // y-start of app window
