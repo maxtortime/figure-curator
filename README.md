@@ -28,7 +28,9 @@ rustup.rs에서 설치 — toolchain은 `x86_64-pc-windows-msvc` 선택.
 [Build Tools 다운로드](https://visualstudio.microsoft.com/visual-cpp-build-tools/) 후 **"C++를 사용한 데스크톱 개발"** 워크로드 체크. 구성 요소:
 - MSVC 빌드 도구 (최신 버전)
 - Windows 11 SDK
-- C++ Clang 도구 (LLVM)
+- **Windows용 C++ Clang 컴파일러** (LLVM)
+
+Visual Studio Installer에서 해당 Visual Studio 항목의 **수정 → 개별 구성 요소**로 이동한 뒤, `Clang`을 검색하여 **Windows용 C++ Clang 컴파일러**를 체크하고 설치를 완료하세요. Clang 관련 MSBuild 지원 항목만 선택하지 말고, **컴파일러 항목**이 선택되어 있는지 확인하세요.
 
 **3. 추가 도구 설치**
 
@@ -44,6 +46,14 @@ winget install NASM.NASM
 ```
 LIBCLANG_PATH=C:\Program Files (x86)\Microsoft Visual Studio\<버전>\BuildTools\VC\Tools\Llvm\x64\bin
 ```
+
+Visual Studio 2022 **Community**를 설치한 경우의 예시:
+
+```text
+LIBCLANG_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin
+```
+
+`LIBCLANG_PATH`에는 **`libclang.dll`이 들어 있는 폴더 경로**를 지정하세요 (파일명 제외). `Llvm` 폴더나 `libclang.dll`이 없다면 위의 **Windows용 C++ Clang 컴파일러** 설치가 완료되었는지 확인하세요. 환경 변수를 추가한 뒤에는 터미널과 IDE를 완전히 종료하고 다시 실행하세요.
 
 **5. Microsoft Defender 제외 경로 추가**
 
